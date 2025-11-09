@@ -1,0 +1,12 @@
+C:\Users\Vash\Documents\GitHub\Cythonic\src\CythonicLexer\bin\Debug\net8.0\CythonicLexer.deps.json
+C:\Users\Vash\Documents\GitHub\Cythonic\src\CythonicLexer\bin\Debug\net8.0\CythonicLexer.dll
+C:\Users\Vash\Documents\GitHub\Cythonic\src\CythonicLexer\bin\Debug\net8.0\CythonicLexer.pdb
+C:\Users\Vash\Documents\GitHub\Cythonic\src\CythonicLexer\obj\Debug\net8.0\CythonicLexer.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Vash\Documents\GitHub\Cythonic\src\CythonicLexer\obj\Debug\net8.0\CythonicLexer.AssemblyInfoInputs.cache
+C:\Users\Vash\Documents\GitHub\Cythonic\src\CythonicLexer\obj\Debug\net8.0\CythonicLexer.AssemblyInfo.cs
+C:\Users\Vash\Documents\GitHub\Cythonic\src\CythonicLexer\obj\Debug\net8.0\CythonicLexer.csproj.CoreCompileInputs.cache
+C:\Users\Vash\Documents\GitHub\Cythonic\src\CythonicLexer\obj\Debug\net8.0\CythonicLexer.sourcelink.json
+C:\Users\Vash\Documents\GitHub\Cythonic\src\CythonicLexer\obj\Debug\net8.0\CythonicLexer.dll
+C:\Users\Vash\Documents\GitHub\Cythonic\src\CythonicLexer\obj\Debug\net8.0\refint\CythonicLexer.dll
+C:\Users\Vash\Documents\GitHub\Cythonic\src\CythonicLexer\obj\Debug\net8.0\CythonicLexer.pdb
+C:\Users\Vash\Documents\GitHub\Cythonic\src\CythonicLexer\obj\Debug\net8.0\ref\CythonicLexer.dll

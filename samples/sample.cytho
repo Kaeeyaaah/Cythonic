@@ -1,0 +1,11 @@
+pub class MyClass {
+    num COUNT = 10;
+    str name = "Earl\n";
+    // increment
+    COUNT++;
+    if (COUNT >= 11) {
+        print("ok");
+    }
+    /* multi
+line comment */
+}
