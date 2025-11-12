@@ -329,7 +329,7 @@ State OP_BAR1: '|' -> emit "||"; otherwise emit '|'
 
 Here's how the lexer processes source code, step-by-step (using the analogy you requested):
 
-## High-Level Flow (Login Analogy)
+## High-Level Flow
 
 ```
 Source Text Input → Character Stream → Token Recognition → Token List Output
@@ -339,7 +339,7 @@ Source Text Input → Character Stream → Token Recognition → Token List Outp
 
 ## Detailed Processing Flow
 
-### 1. **Initialization** (User Opens Login Page)
+### 1. **Initialization**
 ```csharp
 var lexer = new Lexer("if (COUNT >= 11)");
 ```
@@ -347,7 +347,7 @@ var lexer = new Lexer("if (COUNT >= 11)");
 - Initialize position trackers: `_index=0`, `_line=1`, `_column=1`
 - Load keyword trie (DFA with all keywords pre-built)
 
-### 2. **Main Loop** (User Types in Form Fields)
+### 2. **Main Loop**
 ```
 While not at end of source:
     ├─ Skip whitespace (spaces, tabs, newlines)
@@ -362,7 +362,7 @@ While not at end of source:
     └─ Call appropriate lexer method to emit token
 ```
 
-### 3. **Character Classification** (Field Validation)
+### 3. **Character Classification**
 ```
 Current char = 'i'
     ├─ IsLetter? → YES → LexIdentifierOrKeyword
@@ -371,7 +371,7 @@ Current char = 'i'
     └─ Is operator? → NO
 ```
 
-### 4. **Token Recognition** (Submit Button Pressed)
+### 4. **Token Recognition**
 
 #### **Example A: Keyword `if`**
 ```
