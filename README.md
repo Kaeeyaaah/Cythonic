@@ -280,3 +280,208 @@ State OP_BAR1: '|' -> emit "||"; otherwise emit '|'
 - `src/CythonicLexer` – lexer library (`Lexer`, `Token`, `TokenType`, `KeywordTrie`).
 - `tests/CythonicLexer.Tests` – xUnit test suite covering keywords, identifiers, numbers, operators, comments, literals, and the full sample stream.
 - `samples/sample.cytho` – canonical sample program used by documentation and automated tests.
+
+# Cythonic Lexer Flow
+
+Here's how the lexer processes source code, step-by-step (using the analogy you requested):
+
+## High-Level Flow (Login Analogy)
+
+```
+Source Text Input → Character Stream → Token Recognition → Token List Output
+     ↓                    ↓                    ↓                    ↓
+  "if (x)"         Scan char by char    Identify patterns    [{KEYWORD,"if"},{DELIMITER,"("},{IDENTIFIER,"x"},{DELIMITER,")"}]
+```
+
+## Detailed Processing Flow
+
+### 1. **Initialization** (User Opens Login Page)
+```csharp
+var lexer = new Lexer("if (COUNT >= 11)");
+```
+- Store entire source text
+- Initialize position trackers: `_index=0`, `_line=1`, `_column=1`
+- Load keyword trie (DFA with all keywords pre-built)
+
+### 2. **Main Loop** (User Types in Form Fields)
+```
+While not at end of source:
+    ├─ Skip whitespace/comments (ignore invisible chars)
+    ├─ Mark token start position (line, column, index)
+    ├─ Read first character → decide token type
+    └─ Call appropriate lexer method
+```
+
+### 3. **Character Classification** (Field Validation)
+```
+Current char = 'i'
+    ├─ IsLetter? → YES → LexIdentifierOrKeyword
+    ├─ IsDigit? → NO
+    ├─ Is quote? → NO
+    └─ Is operator? → NO
+```
+
+### 4. **Token Recognition** (Submit Button Pressed)
+
+#### **Example A: Keyword `if`**
+```
+Input: "if"
+Flow:
+    ├─ Start at 'i' (line 1, col 1)
+    ├─ Recognize IsIdentifierStart('i') = true
+    ├─ Enter LexIdentifierOrKeyword:
+    │   ├─ Read 'i' → normalize to 'i' → check keyword trie → state 73
+    │   ├─ Read 'f' → normalize to 'f' → check keyword trie → state 74 (ACCEPTING: KEYWORD)
+    │   ├─ Next char '(' → not identifier part → STOP
+    │   └─ Trie says state 74 is accepting → Token type = KEYWORD
+    └─ Emit: Token(KEYWORD, "if", line:1, col:1, raw:"if")
+```
+
+#### **Example B: Identifier `COUNT`**
+```
+Input: "COUNT"
+Flow:
+    ├─ Start at 'C' (line 6, col 9)
+    ├─ Enter LexIdentifierOrKeyword:
+    │   ├─ Read 'C' → normalize to 'c' → check trie → state 22
+    │   ├─ Read 'O' → normalize to 'o' → check trie → NO MATCH in keyword trie
+    │   ├─ Continue reading: 'U','N','T' → build normalized "count"
+    │   ├─ Next char ' ' → not identifier part → STOP
+    │   └─ No keyword match → Token type = IDENTIFIER
+    └─ Emit: Token(IDENTIFIER, "count", line:6, col:9, raw:"COUNT")
+```
+
+#### **Example C: Operator `>=`**
+```
+Input: ">="
+Flow:
+    ├─ Start at '>' (line 6, col 15)
+    ├─ Recognize IsOperatorStart('>') = true
+    ├─ Enter LexOperatorOrDelimiter:
+    │   ├─ Read '>' → check next char
+    │   ├─ Peek ahead: '=' → match multi-char operator ">="
+    │   ├─ Consume both characters
+    │   └─ Longest match wins
+    └─ Emit: Token(OPERATOR, ">=", line:6, col:15, raw:">=")
+```
+
+#### **Example D: Number `11`**
+```
+Input: "11"
+Flow:
+    ├─ Start at '1' (line 6, col 18)
+    ├─ Recognize IsDigit('1') = true
+    ├─ Enter LexNumber:
+    │   ├─ Read '1' → append to normalized
+    │   ├─ Read '1' → append to normalized
+    │   ├─ Next char ')' → not digit/dot/exponent → STOP
+    │   └─ Validate: has integer digits, no invalid suffix
+    └─ Emit: Token(NUMBER, "11", line:6, col:18, raw:"11")
+```
+
+#### **Example E: String `"ok"`**
+```
+Input: "\"ok\""
+Flow:
+    ├─ Start at '"' (line 7, col 15)
+    ├─ Recognize quote → Enter LexStringLiteral:
+    │   ├─ Consume opening '"'
+    │   ├─ Read 'o' → append to content
+    │   ├─ Read 'k' → append to content
+    │   ├─ Read closing '"' → STOP
+    │   └─ Validate: string terminated correctly
+    └─ Emit: Token(STRING_LITERAL, "ok", line:7, col:15, raw:"\"ok\"")
+```
+
+### 5. **Position Tracking** (Breadcrumb Trail)
+```
+Every Advance() call:
+    ├─ Read character at _index
+    ├─ If '\n' or '\r\n' → _line++, _column = 1
+    ├─ Else → _column++
+    └─ _index++
+
+Bias adjustments (for escapes/multi-line comments):
+    ├─ Escape '\n' → _columnBias++ (2 source chars = 1 token char)
+    └─ Comment spanning lines → _lineBias++ (hide internal lines)
+```
+
+### 6. **Error Handling** (Access Denied)
+```
+Invalid cases throw LexerException:
+    ├─ Unterminated string: "hello
+    ├─ Invalid escape: "\q"
+    ├─ Bad number: "1.2.3"
+    └─ Unknown character: "@"
+
+Exception contains: error message, line, column
+```
+
+### 7. **Final Output** (Login Success → Dashboard)
+```csharp
+List<Token> tokens = lexer.Lex();
+// Returns:
+[
+    Token(KEYWORD, "if", 1, 1, "if"),
+    Token(DELIMITER, "(", 1, 4, "("),
+    Token(IDENTIFIER, "count", 1, 5, "COUNT"),
+    Token(OPERATOR, ">=", 1, 11, ">="),
+    Token(NUMBER, "11", 1, 14, "11"),
+    Token(DELIMITER, ")", 1, 16, ")"),
+    Token(EOF, "", 1, 17, "")
+]
+```
+
+## Visual Diagram
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  SOURCE: "if (COUNT >= 11)"                             │
+└────────────┬────────────────────────────────────────────┘
+             │
+             ▼
+┌────────────────────────────────────────────────────────┐
+│  LEXER INITIALIZATION                                   │
+│  • Load keyword trie (73 → 'i', 74 → 'f' = KEYWORD)    │
+│  • Set _index=0, _line=1, _column=1                    │
+└────────────┬───────────────────────────────────────────┘
+             │
+             ▼
+┌────────────────────────────────────────────────────────┐
+│  MAIN LOOP: while (!IsAtEnd())                         │
+└────────────┬───────────────────────────────────────────┘
+             │
+             ├─► Skip whitespace (spaces, tabs, newlines)
+             │
+             ├─► Peek first char → classify
+             │      │
+             │      ├─ Letter/underscore → LexIdentifierOrKeyword
+             │      ├─ Digit → LexNumber
+             │      ├─ Quote → LexStringLiteral / LexCharLiteral
+             │      └─ Operator char → LexOperatorOrDelimiter
+             │
+             ▼
+┌────────────────────────────────────────────────────────┐
+│  TOKEN EMISSION                                         │
+│  _tokens.Add(new Token(...))                           │
+└────────────┬───────────────────────────────────────────┘
+             │
+             ▼ (repeat until end)
+┌────────────────────────────────────────────────────────┐
+│  RETURN: IReadOnlyList<Token>                          │
+│  [KEYWORD, DELIMITER, IDENTIFIER, OPERATOR, ...]       │
+└────────────────────────────────────────────────────────┘
+```
+
+## Key Design Principles (Security Best Practices Analogy)
+
+| Lexer Feature | Login Analogy |
+|--------------|---------------|
+| **DFA keyword recognition** | Password stored as hash (no plaintext comparison) |
+| **Position tracking** | Audit log (track every action with timestamp) |
+| **Error exceptions** | Failed login attempt with reason + location |
+| **Case-insensitive** | Email login (user@DOMAIN = user@domain) |
+| **Longest match** | Greedy token grab (don't stop at `>` when `>=` exists) |
+| **No string maps** | Direct state machine (no database lookup per token) |
+
+This architecture ensures **O(n) time complexity** with **constant memory per character**, making it production-ready for large source files.
