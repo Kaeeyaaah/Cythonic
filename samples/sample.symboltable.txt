@@ -1,0 +1,43 @@
+CYTHONIC LEXICAL ANALYZER - SYMBOL TABLE
+========================================
+
+Source file analyzed: 2025-11-12 22:08:39
+Total tokens: 33
+
+LINE | COL | TYPE              | LEXEME                        | RAW
+-----|-----|-------------------|-------------------------------|----------------------------------
+   1 |   1 | KEYWORD           | pub                           | pub
+   1 |   5 | KEYWORD           | class                         | class
+   1 |  11 | IDENTIFIER        | myclass                       | MyClass
+   1 |  19 | DELIMITER         | {                             | {
+   2 |   5 | TYPE              | num                           | num
+   2 |   9 | IDENTIFIER        | count                         | COUNT
+   2 |  15 | OPERATOR          | =                             | =
+   2 |  17 | NUMBER            | 10                            | 10
+   2 |  19 | DELIMITER         | ;                             | ;
+   3 |   5 | TYPE              | str                           | str
+   3 |   9 | IDENTIFIER        | name                          | name
+   3 |  14 | OPERATOR          | =                             | =
+   3 |  16 | STRING_LITERAL    | Earl\n                        | "Earl\n"
+   3 |  23 | DELIMITER         | ;                             | ;
+   4 |   5 | COMMENT           |  increment                    | // increment
+   5 |   5 | IDENTIFIER        | count                         | COUNT
+   5 |  10 | OPERATOR          | ++                            | ++
+   5 |  12 | DELIMITER         | ;                             | ;
+   6 |   5 | KEYWORD           | if                            | if
+   6 |   8 | DELIMITER         | (                             | (
+   6 |   9 | IDENTIFIER        | count                         | COUNT
+   6 |  15 | OPERATOR          | >=                            | >=
+   6 |  18 | NUMBER            | 11                            | 11
+   6 |  20 | DELIMITER         | )                             | )
+   6 |  22 | DELIMITER         | {                             | {
+   7 |   9 | IDENTIFIER        | print                         | print
+   7 |  14 | DELIMITER         | (                             | (
+   7 |  15 | STRING_LITERAL    | ok                            | "ok"
+   7 |  19 | DELIMITER         | )                             | )
+   7 |  20 | DELIMITER         | ;                             | ;
+   8 |   5 | DELIMITER         | }                             | }
+   9 |   5 | COMMENT           |  multi\r\nline comment        | /* multi\r\nline comment */
+  10 |   1 | DELIMITER         | }                             | }
+
+END OF SYMBOL TABLE
