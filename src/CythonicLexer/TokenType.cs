@@ -11,5 +11,6 @@ public enum TokenType
     OPERATOR,
     DELIMITER,
     BOOLEAN_LITERAL,
+    COMMENT,
     EOF
 }

@@ -37,6 +37,12 @@ var source = await File.ReadAllTextAsync(path);
 var lexer = new Lexer(source);
 var tokens = lexer.Lex();
 
+// Generate symbol table file
+var symbolTablePath = Path.ChangeExtension(path, ".symboltable.txt");
+lexer.WriteSymbolTable(symbolTablePath);
+Console.WriteLine($"Symbol table written to: {symbolTablePath}");
+Console.WriteLine();
+
 var output = tokens
     .Where(t => t.Type != TokenType.EOF)
     .Select(t => new SimplifiedToken(t.Type.ToString(), t.Lexeme, t.Line, t.Column, t.Raw))

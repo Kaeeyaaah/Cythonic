@@ -127,17 +127,25 @@ public sealed class LexerTests
     }
 
     [Fact]
-    public void Lex_CommentsAreSkipped()
+    public void Lex_CommentsAreTokenized()
     {
         const string source = "pub // comment\nclass /* block */ var\n";
         var tokens = LexWithoutEof(source);
 
         Assert.Collection(tokens,
             t => Assert.Equal(TokenType.KEYWORD, t.Type),
+            t => Assert.Equal(TokenType.COMMENT, t.Type),
             t => Assert.Equal(TokenType.KEYWORD, t.Type),
+            t => Assert.Equal(TokenType.COMMENT, t.Type),
             t => Assert.Equal(TokenType.KEYWORD, t.Type));
 
-        Assert.Equal(new[] { "pub", "class", "var" }, tokens.Select(t => t.Lexeme).ToArray());
+        Assert.Equal("pub", tokens[0].Lexeme);
+        Assert.Equal(" comment", tokens[1].Lexeme);
+        Assert.Equal("// comment", tokens[1].Raw);
+        Assert.Equal("class", tokens[2].Lexeme);
+        Assert.Equal(" block ", tokens[3].Lexeme);
+        Assert.Equal("/* block */", tokens[3].Raw);
+        Assert.Equal("var", tokens[4].Lexeme);
     }
 
     [Fact]
@@ -180,6 +188,7 @@ public sealed class LexerTests
             new TokenExpectation(TokenType.OPERATOR, "=", 3, 14, "="),
             new TokenExpectation(TokenType.STRING_LITERAL, "Earl\n", 3, 16, "\"Earl\\n\""),
             new TokenExpectation(TokenType.DELIMITER, ";", 3, 23, ";"),
+            new TokenExpectation(TokenType.COMMENT, " increment", 4, 5, "// increment"),
             new TokenExpectation(TokenType.IDENTIFIER, "count", 5, 5, "COUNT"),
             new TokenExpectation(TokenType.OPERATOR, "++", 5, 10, "++"),
             new TokenExpectation(TokenType.DELIMITER, ";", 5, 12, ";"),
@@ -196,6 +205,7 @@ public sealed class LexerTests
             new TokenExpectation(TokenType.DELIMITER, ")", 7, 19, ")"),
             new TokenExpectation(TokenType.DELIMITER, ";", 7, 20, ";"),
             new TokenExpectation(TokenType.DELIMITER, "}", 8, 5, "}"),
+            new TokenExpectation(TokenType.COMMENT, " multi\nline comment ", 9, 5, "/* multi\nline comment */"),
             new TokenExpectation(TokenType.DELIMITER, "}", 10, 1, "}")
         };
 

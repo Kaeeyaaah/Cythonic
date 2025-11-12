@@ -1,4 +1,6 @@
 using System.Text;
+using System.IO;
+using System.Linq;
 
 namespace CythonicLexer;
 
@@ -25,7 +27,7 @@ public sealed class Lexer
     {
         while (!IsAtEnd())
         {
-            SkipWhitespaceAndComments();
+            SkipWhitespace();
             if (IsAtEnd())
             {
                 break;
@@ -37,6 +39,19 @@ public sealed class Lexer
             var startLineBias = _lineBias;
             var startColumnBias = _columnBias;
             var current = Peek();
+
+            // Check for comments first
+            if (current == '/' && Peek(1) == '/')
+            {
+                LexSingleLineComment(startIndex, startLine, startColumn, startLineBias, startColumnBias);
+                continue;
+            }
+
+            if (current == '/' && Peek(1) == '*')
+            {
+                LexMultiLineComment(startIndex, startLine, startColumn, startLineBias, startColumnBias);
+                continue;
+            }
 
             if (IsIdentifierStart(current))
             {
@@ -83,7 +98,46 @@ public sealed class Lexer
         return _tokens;
     }
 
-    private void SkipWhitespaceAndComments()
+    /// <summary>
+    /// Writes the symbol table to a text file.
+    /// </summary>
+    /// <param name="outputPath">The absolute path to the output file.</param>
+    public void WriteSymbolTable(string outputPath)
+    {
+        using var writer = new StreamWriter(outputPath);
+        writer.WriteLine("CYTHONIC LEXICAL ANALYZER - SYMBOL TABLE");
+        writer.WriteLine("========================================");
+        writer.WriteLine();
+        writer.WriteLine($"Source file analyzed: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        writer.WriteLine($"Total tokens: {_tokens.Count(t => t.Type != TokenType.EOF)}");
+        writer.WriteLine();
+        writer.WriteLine("LINE | COL | TYPE              | LEXEME                        | RAW");
+        writer.WriteLine("-----|-----|-------------------|-------------------------------|----------------------------------");
+
+        foreach (var token in _tokens)
+        {
+            if (token.Type == TokenType.EOF) continue;
+
+            var lexemeDisplay = token.Lexeme.Length > 28
+                ? token.Lexeme.Substring(0, 25) + "..."
+                : token.Lexeme;
+
+            var rawDisplay = token.Raw.Length > 32
+                ? token.Raw.Substring(0, 29) + "..."
+                : token.Raw;
+
+            // Escape newlines for display
+            lexemeDisplay = lexemeDisplay.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
+            rawDisplay = rawDisplay.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
+
+            writer.WriteLine($"{token.Line,4} | {token.Column,3} | {token.Type,-17} | {lexemeDisplay,-29} | {rawDisplay}");
+        }
+
+        writer.WriteLine();
+        writer.WriteLine("END OF SYMBOL TABLE");
+    }
+
+    private void SkipWhitespace()
     {
         while (!IsAtEnd())
         {
@@ -100,53 +154,77 @@ public sealed class Lexer
                 continue;
             }
 
-            if (c == '/' && Peek(1) == '/')
-            {
-                Advance();
-                Advance();
-                while (!IsAtEnd())
-                {
-                    var next = Peek();
-                    if (next == '\r' || next == '\n')
-                    {
-                        break;
-                    }
-
-                    Advance();
-                }
-
-                continue;
-            }
-
-            if (c == '/' && Peek(1) == '*')
-            {
-                Advance();
-                Advance();
-                var terminated = false;
-                while (!IsAtEnd())
-                {
-                    var next = Advance();
-                    if (next == '\n')
-                    {
-                        _lineBias++;
-                    }
-                    if (next == '*' && Peek() == '/')
-                    {
-                        Advance();
-                        terminated = true;
-                        break;
-                    }
-                }
-
-                if (!terminated)
-                {
-                    throw new LexerException("Unterminated multi-line comment", _line, _column);
-                }
-
-                continue;
-            }
-
             break;
+        }
+    }
+
+    private void LexSingleLineComment(int startIndex, int startLine, int startColumn, int startLineBias, int startColumnBias)
+    {
+        // Consume '//'
+        Advance();
+        Advance();
+        
+        var contentStart = _index;
+        
+        while (!IsAtEnd())
+        {
+            var next = Peek();
+            if (next == '\r' || next == '\n')
+            {
+                break;
+            }
+            Advance();
+        }
+
+        var raw = _source.Substring(startIndex, _index - startIndex);
+        var content = _source.Substring(contentStart, _index - contentStart);
+        var lexeme = content.ToLowerInvariant();
+
+        var line = AdjustLine(startLine, startLineBias);
+        var column = AdjustColumn(startColumn, startColumnBias);
+
+        _tokens.Add(new Token(TokenType.COMMENT, lexeme, line, column, raw));
+    }
+
+    private void LexMultiLineComment(int startIndex, int startLine, int startColumn, int startLineBias, int startColumnBias)
+    {
+        // Consume '/*'
+        Advance();
+        Advance();
+        
+        var contentStart = _index;
+        var terminated = false;
+        
+        while (!IsAtEnd())
+        {
+            var next = Advance();
+            if (next == '\n')
+            {
+                _lineBias++;
+            }
+            if (next == '*' && Peek() == '/')
+            {
+                // Capture content before consuming '*/'
+                var contentEnd = _index - 1;
+                Advance(); // consume '/'
+                
+                var raw = _source.Substring(startIndex, _index - startIndex);
+                var content = _source.Substring(contentStart, contentEnd - contentStart);
+                var lexeme = content.ToLowerInvariant();
+
+                var line = AdjustLine(startLine, startLineBias);
+                var column = AdjustColumn(startColumn, startColumnBias);
+
+                _tokens.Add(new Token(TokenType.COMMENT, lexeme, line, column, raw));
+                
+                terminated = true;
+                break;
+            }
+        }
+
+        if (!terminated)
+        {
+            throw new LexerException("Unterminated multi-line comment", _line, _column);
         }
     }
 
