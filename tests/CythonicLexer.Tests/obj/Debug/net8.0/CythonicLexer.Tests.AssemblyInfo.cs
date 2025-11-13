@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CythonicLexer.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1fc91455dcdf4a6f3828cd6e8cb3b02cbb9153b7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9897ca72ddb9d426009453495e47d0f6dd70ac70")]
 [assembly: System.Reflection.AssemblyProductAttribute("CythonicLexer.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CythonicLexer.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

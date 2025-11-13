@@ -30,8 +30,8 @@ This document verifies that the Cythonic lexical analyzer meets all required cri
 
 ---
 
-### 3. ✅ Keywords (46 total - EXCEEDS requirement of 23)
-**Status: COMPLIANT (200%)**
+### 3. ✅ Keywords (49 - EXCEEDS requirement of 23)
+**Status: COMPLIANT (213%)**
 
 **Control Flow (9):**
 1. `if`
@@ -93,7 +93,12 @@ This document verifies that the Cythonic lexical analyzer meets all required cri
 45. `nnull` (not null)
 46. `dyn` (dynamic)
 
-**Implementation**: `KeywordTrie.cs` with 165-state DFA
+**Additional - Noise Words (3):**
+47. `at` (optional filler for if statements)
+48. `its` (optional filler for while loops)
+49. `then` (optional filler for if statements)
+
+**Implementation**: `KeywordTrie.cs` with 168-state DFA (165 + 3 noise word states)
 
 ---
 
@@ -153,15 +158,44 @@ This document verifies that the Cythonic lexical analyzer meets all required cri
 
 ---
 
-### 6. ❌ Noise Words
-**Status: NOT APPLICABLE**
+### 6. ✅ Noise Words (3 total)
+**Status: COMPLIANT**
 
-**Explanation**: Cythonic does not define "noise words" (filler words like "THE", "A", "AN" found in COBOL). This is a modern C-style language where all keywords have semantic meaning.
+**Definition**: Optional filler words that enhance readability but have no semantic effect (can be ε/epsilon in grammar).
 
-**Alternative Interpretation - Whitespace:**
-If "noise words" refers to ignored tokens:
-- **Whitespace**: Spaces, tabs, newlines are skipped
-- **Implementation**: `SkipWhitespace()` method
+**Implementation**: 
+- Token Type: `NOISE_WORD`
+- Recognition: Keyword trie classifies them separately from regular keywords
+- DFA States: 3 accepting states added (165 → 168 total states)
+
+**Noise Words:**
+
+1. **`then`** - Optional in if statements
+   - Grammar: `if ( <expression> ) then <statement_block>`
+   - DFA Path: S0 —t→ S143 —h→ S144 —e→ S145 —n→ S146 (accept)
+   - Example: `if at (x > 5) then { print("yes"); }`
+
+2. **`at`** - Optional in if statements  
+   - Grammar: `if at ( <expression> ) <statement_block>`
+   - DFA Path: S0 —a→ S1 —t→ S168 (accept)
+   - Example: `if at (counter > 0) { counter--; }`
+
+3. **`its`** - Optional in while loops
+   - Grammar: `while its ( <expression> ) <statement_block>`
+   - DFA Path: S0 —i→ S73 —t→ S167 —s→ S168 (accept)
+   - Example: `while its (count < 100) { count++; }`
+
+**Key Features:**
+- All noise words are **optional** (ε-production in grammar)
+- Can be used independently: `if at`, `if then`, `if at...then`
+- Case-insensitive like all Cythonic keywords
+- Tokenized as `NOISE_WORD` type (not discarded)
+- Appear in symbol table for complete traceability
+
+**Evidence:**
+- `samples/noise_words_test.cytho` - dedicated test file
+- `samples/sample.cytho` - lines 67-71, 96-100, 257-276, 282-284
+- Symbol table shows `NOISE_WORD` token type
 
 ---
 
@@ -315,10 +349,10 @@ dotnet run --project tools/Cythonic.Cli -- run sample.cytho
 |-----------|----------|-------------|--------|
 | Unique File Type | Yes | ✅ `.cytho` | PASS |
 | Identifiers | Yes | ✅ Full DFA | PASS |
-| Keywords | 23 | ✅ 46 (200%) | PASS |
+| Keywords | 23 | ✅ 49 (213%) | PASS |
 | Reserved Words | 5 | ✅ 8 (160%) | PASS |
 | Constant Types | 4 | ✅ 6 (150%) | PASS |
-| Noise Words | ? | ❌ N/A | N/A |
+| Noise Words | ? | ✅ 3 (`at`, `its`, `then`) | PASS |
 | Comments | Yes | ✅ Both types | PASS |
 | Arithmetic Operators | 7 | ✅ 8 (114%) | PASS |
 | Boolean Operators | 9 | ✅ 11 (122%) | PASS |

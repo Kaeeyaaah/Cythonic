@@ -12,5 +12,6 @@ public enum TokenType
     DELIMITER,
     BOOLEAN_LITERAL,
     COMMENT,
+    NOISE_WORD,
     EOF
 }
