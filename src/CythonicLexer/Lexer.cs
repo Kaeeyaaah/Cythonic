@@ -478,127 +478,169 @@ public sealed class Lexer
                 if (Peek() == '+')
                 {
                     lexeme = "++";
+                    type = TokenType.PLUS_PLUS;
                     Advance();
                 }
                 else
                 {
                     lexeme = "+";
+                    type = TokenType.PLUS;
                 }
-
-                type = TokenType.OPERATOR;
                 break;
             case '-':
                 if (Peek() == '-')
                 {
                     lexeme = "--";
+                    type = TokenType.MINUS_MINUS;
                     Advance();
                 }
                 else
                 {
                     lexeme = "-";
+                    type = TokenType.MINUS;
                 }
-
-                type = TokenType.OPERATOR;
                 break;
             case '=':
                 if (Peek() == '=')
                 {
                     lexeme = "==";
+                    type = TokenType.EQUAL_EQUAL;
                     Advance();
                 }
                 else
                 {
                     lexeme = "=";
+                    type = TokenType.EQUAL;
                 }
-
-                type = TokenType.OPERATOR;
                 break;
             case '!':
                 if (Peek() == '=')
                 {
                     lexeme = "!=";
+                    type = TokenType.NOT_EQUAL;
                     Advance();
                 }
                 else
                 {
                     lexeme = "!";
+                    type = TokenType.NOT;
                 }
-
-                type = TokenType.OPERATOR;
                 break;
             case '>':
                 if (Peek() == '=')
                 {
                     lexeme = ">=";
+                    type = TokenType.GREATER_EQUAL;
                     Advance();
                 }
                 else
                 {
                     lexeme = ">";
+                    type = TokenType.GREATER;
                 }
-
-                type = TokenType.OPERATOR;
                 break;
             case '<':
                 if (Peek() == '=')
                 {
                     lexeme = "<=";
+                    type = TokenType.LESS_EQUAL;
                     Advance();
                 }
                 else
                 {
                     lexeme = "<";
+                    type = TokenType.LESS;
                 }
-
-                type = TokenType.OPERATOR;
                 break;
             case '&':
                 if (Peek() == '&')
                 {
                     lexeme = "&&";
+                    type = TokenType.AND_AND;
                     Advance();
                 }
                 else
                 {
                     lexeme = "&";
+                    type = TokenType.AND;
                 }
-
-                type = TokenType.OPERATOR;
                 break;
             case '|':
                 if (Peek() == '|')
                 {
                     lexeme = "||";
+                    type = TokenType.OR_OR;
                     Advance();
                 }
                 else
                 {
                     lexeme = "|";
+                    type = TokenType.OR;
                 }
-
-                type = TokenType.OPERATOR;
                 break;
             case '*':
+                lexeme = "*";
+                type = TokenType.STAR;
+                break;
             case '/':
+                lexeme = "/";
+                type = TokenType.SLASH;
+                break;
             case '%':
+                lexeme = "%";
+                type = TokenType.PERCENT;
+                break;
             case '^':
+                lexeme = "^";
+                type = TokenType.XOR;
+                break;
             case '~':
-                lexeme = new string(first, 1);
-                type = TokenType.OPERATOR;
+                lexeme = "~";
+                type = TokenType.TILDE;
+                break;
+            case '(':
+                lexeme = "(";
+                type = TokenType.LEFT_PAREN;
+                break;
+            case ')':
+                lexeme = ")";
+                type = TokenType.RIGHT_PAREN;
+                break;
+            case '{':
+                lexeme = "{";
+                type = TokenType.LEFT_BRACE;
+                break;
+            case '}':
+                lexeme = "}";
+                type = TokenType.RIGHT_BRACE;
+                break;
+            case '[':
+                lexeme = "[";
+                type = TokenType.LEFT_BRACKET;
+                break;
+            case ']':
+                lexeme = "]";
+                type = TokenType.RIGHT_BRACKET;
+                break;
+            case ';':
+                lexeme = ";";
+                type = TokenType.SEMICOLON;
+                break;
+            case ',':
+                lexeme = ",";
+                type = TokenType.COMMA;
+                break;
+            case '.':
+                lexeme = ".";
+                type = TokenType.DOT;
                 break;
             case ':':
-            case ';':
-            case ',':
-            case '.':
-            case '(': 
-            case ')':
-            case '{':
-            case '}':
-            case '[':
-            case ']':
+                lexeme = ":";
+                type = TokenType.COLON;
+                break;
             case '?':
-                lexeme = new string(first, 1);
-                type = TokenType.DELIMITER;
+                lexeme = "?";
+                type = TokenType.QUESTION;
                 break;
             default:
                 throw new LexerException($"Unexpected operator character '{first}'", startLine, startColumn);
