@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Cythonic.Cli")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+218608b5966cf27e06d3fc392795763959ed8ec6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9897ca72ddb9d426009453495e47d0f6dd70ac70")]
 [assembly: System.Reflection.AssemblyProductAttribute("Cythonic.Cli")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Cythonic.Cli")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
