@@ -948,11 +948,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\tests\\CythonicLexer.Tests\\CythonicLexer.Tests.csproj",
+      "projectUniqueName": "C:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\tests\\CythonicLexer.Tests\\CythonicLexer.Tests.csproj",
       "projectName": "CythonicLexer.Tests",
-      "projectPath": "c:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\tests\\CythonicLexer.Tests\\CythonicLexer.Tests.csproj",
+      "projectPath": "C:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\tests\\CythonicLexer.Tests\\CythonicLexer.Tests.csproj",
       "packagesPath": "C:\\Users\\Vash\\.nuget\\packages\\",
-      "outputPath": "c:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\tests\\CythonicLexer.Tests\\obj\\",
+      "outputPath": "C:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\tests\\CythonicLexer.Tests\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -973,8 +973,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "c:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\src\\CythonicLexer\\CythonicLexer.csproj": {
-              "projectPath": "c:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\src\\CythonicLexer\\CythonicLexer.csproj"
+            "C:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\src\\CythonicLexer\\CythonicLexer.csproj": {
+              "projectPath": "C:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\src\\CythonicLexer\\CythonicLexer.csproj"
             }
           }
         }

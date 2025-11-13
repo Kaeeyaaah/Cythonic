@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("KeywordTrieInspector")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9897ca72ddb9d426009453495e47d0f6dd70ac70")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+24fff0a23e67d361ee382693110059277c662079")]
 [assembly: System.Reflection.AssemblyProductAttribute("KeywordTrieInspector")]
 [assembly: System.Reflection.AssemblyTitleAttribute("KeywordTrieInspector")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

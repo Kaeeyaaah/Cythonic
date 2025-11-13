@@ -23,6 +23,33 @@ public sealed class Lexer
         _source = source ?? throw new ArgumentNullException(nameof(source));
     }
 
+    public static Lexer FromFile(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new ArgumentException("File path cannot be null or empty.", nameof(filePath));
+        }
+
+        var fullPath = Path.GetFullPath(filePath);
+        
+        if (!File.Exists(fullPath))
+        {
+            throw new FileNotFoundException($"Source file not found: {fullPath}", fullPath);
+        }
+
+        var extension = Path.GetExtension(fullPath);
+        if (!string.Equals(extension, ".cytho", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                $"Invalid file type. Expected '.cytho' file, but got '{extension}'. " +
+                "Cythonic lexer only processes files with the .cytho extension.",
+                nameof(filePath));
+        }
+
+        var source = File.ReadAllText(fullPath);
+        return new Lexer(source);
+    }
+
     public IReadOnlyList<Token> Lex()
     {
         while (!IsAtEnd())
@@ -188,37 +215,64 @@ public sealed class Lexer
 
     private void LexMultiLineComment(int startIndex, int startLine, int startColumn, int startLineBias, int startColumnBias)
     {
-        // Consume '/*'
+        // Consume opening '/*'
         Advance();
         Advance();
         
         var contentStart = _index;
+        var depth = 1; // Track nesting depth
         var terminated = false;
         
-        while (!IsAtEnd())
+        while (!IsAtEnd() && depth > 0)
         {
+            var current = Peek();
+            
+            // Check for opening nested comment '/*'
+            if (current == '/' && Peek(1) == '*')
+            {
+                depth++;
+                Advance(); // consume '/'
+                Advance(); // consume '*'
+                continue;
+            }
+            
+            // Check for closing comment '*/'
+            if (current == '*' && Peek(1) == '/')
+            {
+                depth--;
+                if (depth == 0)
+                {
+                    // Capture content before consuming final '*/'
+                    var contentEnd = _index;
+                    Advance(); // consume '*'
+                    Advance(); // consume '/'
+                    
+                    var raw = _source.Substring(startIndex, _index - startIndex);
+                    var content = _source.Substring(contentStart, contentEnd - contentStart);
+                    var lexeme = content.ToLowerInvariant();
+
+                    var line = AdjustLine(startLine, startLineBias);
+                    var column = AdjustColumn(startColumn, startColumnBias);
+
+                    _tokens.Add(new Token(TokenType.COMMENT, lexeme, line, column, raw));
+                    
+                    terminated = true;
+                    break;
+                }
+                else
+                {
+                    // It's a closing tag for a nested comment, just consume it
+                    Advance(); // consume '*'
+                    Advance(); // consume '/'
+                    continue;
+                }
+            }
+            
+            // Track newlines for line bias
             var next = Advance();
             if (next == '\n')
             {
                 _lineBias++;
-            }
-            if (next == '*' && Peek() == '/')
-            {
-                // Capture content before consuming '*/'
-                var contentEnd = _index - 1;
-                Advance(); // consume '/'
-                
-                var raw = _source.Substring(startIndex, _index - startIndex);
-                var content = _source.Substring(contentStart, contentEnd - contentStart);
-                var lexeme = content.ToLowerInvariant();
-
-                var line = AdjustLine(startLine, startLineBias);
-                var column = AdjustColumn(startColumn, startColumnBias);
-
-                _tokens.Add(new Token(TokenType.COMMENT, lexeme, line, column, raw));
-                
-                terminated = true;
-                break;
             }
         }
 

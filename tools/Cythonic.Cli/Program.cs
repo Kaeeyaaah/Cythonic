@@ -25,35 +25,51 @@ if (argsList.Count < 2)
     return;
 }
 
-var path = Path.GetFullPath(argsList[1]);
-if (!File.Exists(path))
+var path = argsList[1];
+
+try
 {
-    Console.Error.WriteLine($"Input file '{path}' not found.");
+    var lexer = Lexer.FromFile(path);
+    var tokens = lexer.Lex();
+
+    // Generate symbol table file
+    var fullPath = Path.GetFullPath(path);
+    var symbolTablePath = Path.ChangeExtension(fullPath, ".symboltable.txt");
+    lexer.WriteSymbolTable(symbolTablePath);
+    Console.WriteLine($"Symbol table written to: {symbolTablePath}");
+    Console.WriteLine();
+
+    var output = tokens
+        .Where(t => t.Type != TokenType.EOF)
+        .Select(t => new SimplifiedToken(t.Type.ToString(), t.Lexeme, t.Line, t.Column, t.Raw))
+        .ToArray();
+
+    var json = JsonSerializer.Serialize(output, new JsonSerializerOptions
+    {
+        WriteIndented = true
+    });
+
+    Console.WriteLine(json);
+}
+catch (FileNotFoundException ex)
+{
+    Console.Error.WriteLine(ex.Message);
+    Environment.ExitCode = 1;
+    return;
+}
+catch (ArgumentException ex)
+{
+    Console.Error.WriteLine(ex.Message);
+    Environment.ExitCode = 1;
+    return;
+}
+catch (LexerException ex)
+{
+    Console.Error.WriteLine($"Lexical error at line {ex.Line}, column {ex.Column}: {ex.Message}");
     Environment.ExitCode = 1;
     return;
 }
 
-var source = await File.ReadAllTextAsync(path);
-var lexer = new Lexer(source);
-var tokens = lexer.Lex();
-
-// Generate symbol table file
-var symbolTablePath = Path.ChangeExtension(path, ".symboltable.txt");
-lexer.WriteSymbolTable(symbolTablePath);
-Console.WriteLine($"Symbol table written to: {symbolTablePath}");
-Console.WriteLine();
-
-var output = tokens
-    .Where(t => t.Type != TokenType.EOF)
-    .Select(t => new SimplifiedToken(t.Type.ToString(), t.Lexeme, t.Line, t.Column, t.Raw))
-    .ToArray();
-
-var json = JsonSerializer.Serialize(output, new JsonSerializerOptions
-{
-    WriteIndented = true
-});
-
-Console.WriteLine(json);
 return;
 
 static void PrintUsage()

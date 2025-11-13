@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "NYz+JhByf34=",
+  "dgSpecHash": "FSbYLfk0iB8=",
   "success": true,
-  "projectFilePath": "c:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\tests\\CythonicLexer.Tests\\CythonicLexer.Tests.csproj",
+  "projectFilePath": "C:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\tests\\CythonicLexer.Tests\\CythonicLexer.Tests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Vash\\.nuget\\packages\\coverlet.collector\\6.0.0\\coverlet.collector.6.0.0.nupkg.sha512",
     "C:\\Users\\Vash\\.nuget\\packages\\microsoft.codecoverage\\17.10.0\\microsoft.codecoverage.17.10.0.nupkg.sha512",
