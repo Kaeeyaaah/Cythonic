@@ -3,10 +3,6 @@
 // Demonstrates ALL token types and features
 // ============================================
 
-/* Multi-line comment
-   Testing comment tokenization
-   with multiple lines */
-
 // 1. NAMESPACE & IMPORTS (Keywords: nspace, use)
 nspace MyApp.Core;
 use System.Collections;
