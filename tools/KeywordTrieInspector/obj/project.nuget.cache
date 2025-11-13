@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "0Nr1A0CFB8s=",
+  "dgSpecHash": "sBX5fgky7FQ=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\tools\\KeywordTrieInspector\\KeywordTrieInspector.csproj",
+  "projectFilePath": "c:\\Users\\Vash\\Documents\\GitHub\\Cythonic\\tools\\KeywordTrieInspector\\KeywordTrieInspector.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Vash\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.21\\microsoft.netcore.app.ref.8.0.21.nupkg.sha512",
     "C:\\Users\\Vash\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.21\\microsoft.windowsdesktop.app.ref.8.0.21.nupkg.sha512",
