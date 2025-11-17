@@ -3,7 +3,8 @@ namespace CythonicLexer;
 public enum TokenType
 {
     // Keywords and Types
-    KEYWORD,
+    KEYWORD,           // Contextual keywords (21 total)
+    RESERVED_WORD,     // Reserved words (33 total)
     TYPE,
     IDENTIFIER,
     BOOLEAN_LITERAL,

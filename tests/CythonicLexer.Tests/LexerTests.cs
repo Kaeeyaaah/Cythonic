@@ -14,7 +14,7 @@ public sealed class LexerTests
         Assert.Equal(3, tokens.Count);
         foreach (var token in tokens)
         {
-            Assert.Equal(TokenType.KEYWORD, token.Type);
+            Assert.Equal(TokenType.RESERVED_WORD, token.Type);
             Assert.Equal("if", token.Lexeme);
         }
 
@@ -133,9 +133,9 @@ public sealed class LexerTests
         var tokens = LexWithoutEof(source);
 
         Assert.Collection(tokens,
-            t => Assert.Equal(TokenType.KEYWORD, t.Type),
+            t => Assert.Equal(TokenType.RESERVED_WORD, t.Type),
             t => Assert.Equal(TokenType.COMMENT, t.Type),
-            t => Assert.Equal(TokenType.KEYWORD, t.Type),
+            t => Assert.Equal(TokenType.RESERVED_WORD, t.Type),
             t => Assert.Equal(TokenType.COMMENT, t.Type),
             t => Assert.Equal(TokenType.KEYWORD, t.Type));
 
@@ -174,8 +174,8 @@ public sealed class LexerTests
 
         var expected = new[]
         {
-            new TokenExpectation(TokenType.KEYWORD, "pub", 1, 1, "pub"),
-            new TokenExpectation(TokenType.KEYWORD, "class", 1, 5, "class"),
+            new TokenExpectation(TokenType.RESERVED_WORD, "pub", 1, 1, "pub"),
+            new TokenExpectation(TokenType.RESERVED_WORD, "class", 1, 5, "class"),
             new TokenExpectation(TokenType.IDENTIFIER, "myclass", 1, 11, "MyClass"),
             new TokenExpectation(TokenType.LEFT_BRACE, "{", 1, 19, "{"),
             new TokenExpectation(TokenType.TYPE, "num", 2, 5, "num"),
@@ -192,7 +192,7 @@ public sealed class LexerTests
             new TokenExpectation(TokenType.IDENTIFIER, "count", 5, 5, "COUNT"),
             new TokenExpectation(TokenType.PLUS_PLUS, "++", 5, 10, "++"),
             new TokenExpectation(TokenType.SEMICOLON, ";", 5, 12, ";"),
-            new TokenExpectation(TokenType.KEYWORD, "if", 6, 5, "if"),
+            new TokenExpectation(TokenType.RESERVED_WORD, "if", 6, 5, "if"),
             new TokenExpectation(TokenType.LEFT_PAREN, "(", 6, 8, "("),
             new TokenExpectation(TokenType.IDENTIFIER, "count", 6, 9, "COUNT"),
             new TokenExpectation(TokenType.GREATER_EQUAL, ">=", 6, 15, ">="),

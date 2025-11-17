@@ -30,99 +30,132 @@ This document verifies that the Cythonic lexical analyzer meets all required cri
 
 ---
 
-### 3. ✅ Keywords (49 - EXCEEDS requirement of 23)
-**Status: COMPLIANT (213%)**
+### 3. ✅ Contextual Keywords (21 total)
+**Status: COMPLIANT**
 
-**Control Flow (9):**
-1. `if`
-2. `else`
-3. `for`
-4. `foreach`
-5. `while`
-6. `do`
-7. `switch`
-8. `case`
-9. `break`
+**Token Type**: `KEYWORD`
 
-**Declarations (9):**
-10. `class`
-11. `struct`
-12. `enum`
-13. `record`
-14. `iface` (interface)
-15. `var`
-16. `let`
-17. `val`
-18. `use`
+Contextual keywords are recognized as keywords in specific contexts but can be used as identifiers outside those contexts:
 
-**Access Modifiers (3):**
-19. `pub` (public)
-20. `priv` (private)
-21. `prot` (protected)
+1. `and` - logical AND operator
+2. `args` - program arguments
+3. `async` - asynchronous method modifier
+4. `dyn` - dynamic type declaration
+5. `get` - property getter accessor
+6. `global` - global namespace reference
+7. `init` - initialization-only property setter
+8. `let` - creates a variable for sub-expression reuse
+9. `nmof` - nameof operator
+10. `nnull` - non-null constraint
+11. `or` - logical OR operator
+12. `rec` - compact record declaration
+13. `req` - required field/parameter marker
+14. `set` - property setter accessor
+15. `stc` - static modifier
+16. `str` - string type (also TYPE)
+17. `struct` - structure declaration
+18. `switch` - switch statement
+19. `this` - current object reference
+20. `val` - value literal
+21. `var` - type inference declaration
 
-**Object-Oriented (6):**
-22. `this`
-23. `base`
-24. `new`
-25. `init`
-26. `get`
-27. `set`
-
-**Namespace/Scope (5):**
-28. `nspace` (namespace)
-29. `global`
-30. `nmof` (nameof)
-31. `as`
-32. `in`
-
-**Modifiers (5):**
-33. `stc` (static)
-34. `async`
-35. `rdo` (readonly)
-36. `req` (required)
-37. `rec` (recursive)
-
-**Special Keywords (8):**
-38. `return`
-39. `default`
-40. `next`
-41. `args`
-42. `and`
-43. `or`
-44. `null`
-45. `nnull` (not null)
-46. `dyn` (dynamic)
-
-**Additional - Noise Words (3):**
-47. `at` (optional filler for if statements)
-48. `its` (optional filler for while loops)
-49. `then` (optional filler for if statements)
-
-**Implementation**: `KeywordTrie.cs` with 168-state DFA (165 + 3 noise word states)
+**Implementation**: `KeywordTrie.cs` - classified as `TokenType.KEYWORD`
 
 ---
 
-### 4. ✅ Reserved Words (8 total - EXCEEDS requirement of 5)
-**Status: COMPLIANT (160%)**
+### 4. ✅ Reserved Words (33 total - EXCEEDS requirement of 5)
+**Status: COMPLIANT (660%)**
 
-**Type Keywords (7):**
-1. `bool`
-2. `char`
-3. `int`
-4. `double`
-5. `str` (string)
-6. `num` (numeric)
-7. `void`
+**Token Type**: `RESERVED_WORD`
 
-**Boolean Literals (2):**
-8. `true`
-9. `false`
+Reserved words cannot be used as identifiers in any context:
 
-**Note**: These are classified as `TYPE` and `BOOLEAN_LITERAL` in the lexer to distinguish them from regular keywords.
+1. `as` - type conversion operator
+2. `base` - parent class access
+3. `bool` - boolean type (also TYPE)
+4. `break` - loop/switch exit
+5. `case` - switch case clause
+6. `char` - character type (also TYPE)
+7. `class` - class declaration
+8. `default` - default case/value
+9. `do` - do-while loop
+10. `double` - double precision type (also TYPE)
+11. `else` - conditional alternative
+12. `enum` - enumeration declaration
+13. `false` - boolean literal (also BOOLEAN_LITERAL)
+14. `for` - for loop
+15. `foreach` - collection iteration loop
+16. `if` - conditional statement
+17. `iface` - interface declaration
+18. `in` - collection membership
+19. `int` - integer type (also TYPE)
+20. `new` - object instantiation
+21. `next` - skip to next iteration
+22. `nspace` - namespace declaration
+23. `null` - null reference literal
+24. `num` - numeric type (also TYPE)
+25. `priv` - private access modifier
+26. `prot` - protected access modifier
+27. `pub` - public access modifier
+28. `rdo` - readonly modifier
+29. `record` - record type declaration
+30. `return` - function return
+31. `true` - boolean literal (also BOOLEAN_LITERAL)
+32. `use` - namespace import
+33. `void` - void return type (also TYPE)
+34. `while` - while loop
+
+**Implementation**: `KeywordTrie.cs` - classified as `TokenType.RESERVED_WORD`
 
 ---
 
-### 5. ✅ Constant Values (4+ types)
+### 5. ✅ Noise Words (3 total)
+**Status: COMPLIANT**
+
+**Token Type**: `NOISE_WORD`
+
+Optional filler words that improve readability without affecting semantics:
+
+1. `at` - optional in if statements
+2. `its` - optional in while loops
+3. `then` - optional in if statements
+
+**Implementation**: `KeywordTrie.cs` - classified as `TokenType.NOISE_WORD`
+
+---
+
+### 6. ✅ Type Keywords (7 total)
+**Status: COMPLIANT**
+
+**Token Type**: `TYPE`
+
+Type keywords represent data types and are classified separately from regular keywords:
+
+1. `bool` - boolean type (also RESERVED_WORD)
+2. `char` - character type (also RESERVED_WORD)
+3. `int` - integer type (also RESERVED_WORD)
+4. `double` - double precision type (also RESERVED_WORD)
+5. `str` - string type (also KEYWORD)
+6. `num` - numeric type (also RESERVED_WORD)
+7. `void` - void return type (also RESERVED_WORD)
+
+**Implementation**: `KeywordTrie.cs` - classified as `TokenType.TYPE`
+
+---
+
+### 7. ✅ Boolean Literals (2 total)
+**Status: COMPLIANT**
+
+**Token Type**: `BOOLEAN_LITERAL`
+
+1. `true` - boolean true value (also RESERVED_WORD)
+2. `false` - boolean false value (also RESERVED_WORD)
+
+**Implementation**: `KeywordTrie.cs` - classified as `TokenType.BOOLEAN_LITERAL`
+
+---
+
+### 8. ✅ Constant Values (4+ types)
 **Status: COMPLIANT**
 
 **1. INTEGER Constants:**
@@ -224,7 +257,7 @@ This document verifies that the Cythonic lexical analyzer meets all required cri
 
 ---
 
-### 8. ✅ Operators
+### 9. ✅ Operators
 **Status: COMPLIANT**
 
 #### a. ✅ Arithmetic Operators (7+)
@@ -261,7 +294,7 @@ This document verifies that the Cythonic lexical analyzer meets all required cri
 
 ---
 
-### 9. ✅ Delimiters and Brackets
+### 10. ✅ Delimiters and Brackets
 **Status: COMPLIANT**
 
 **Delimiters (9):**
@@ -285,7 +318,7 @@ This document verifies that the Cythonic lexical analyzer meets all required cri
 
 ---
 
-### 10. ✅ Invalid/Unrecognized Tokens
+### 11. ✅ Invalid/Unrecognized Tokens
 **Status: COMPLIANT**
 
 **Error Handling:**
