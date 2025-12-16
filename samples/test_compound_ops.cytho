@@ -1,7 +1,0 @@
-tong main siyaw
-    nmbrng x syaw 10 siyaw
-    x += 5 siyaw
-    x -= 3 siyaw
-    x *= 2 siyaw
-    x /= 4 siyaw
-salikut

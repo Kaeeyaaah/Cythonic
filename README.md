@@ -1,26 +1,42 @@
 # Cythonic Compiler
 
-Production-ready compiler for the case-insensitive Cythonic language (`.cytho`), implemented in **C (C11 standard)**. The compiler includes a **lexical analyzer** (tokenizer) and a **recursive descent parser** (syntax analyzer) that processes `.cytho` source files and generates symbol tables and parse trees.
+**Complete compiler implementation** for the case-insensitive Cythonic programming language (`.cytho`), developed as a **Principles of Programming Languages (PPL) project**. Written entirely in **C (C11 standard)** with a **recursive descent parser** and **panic-mode error recovery**.
 
-## What this project gives you
-- A **tokenizer (lexer)** that reads `.cytho` source text and breaks it into meaningful tokens using DFA-based keyword recognition.
-- A **recursive descent parser** that performs syntax analysis and generates detailed parse trees.
-- A **command-line tool** that lets you run `./cythonic <file>` to analyze any `.cytho` file.
-- **Robust error handling** - creates `INVALID` tokens for unrecognized characters and provides detailed syntax error messages.
-- **Unterminated string support** - strings without closing quotes are valid (reads until newline/EOF).
-- **Sample programs** demonstrating language features and compiler capabilities.
-- **Symbol table generation** - automatically creates `.symboltable.txt` files with formatted token tables.
-- **Parse tree generation** - automatically creates `.parsetree.txt` files showing derivation trees.
+## 🎓 Project Overview
 
-If you are new to lexers, think of this repository as the "front door" of the language pipeline: it reads raw text and turns it into structured pieces that later stages (parser, semantic analyser, compiler) can understand.
+This compiler demonstrates all core concepts of compiler construction:
+- **Lexical Analysis**: DFA-based tokenization with 200-state Trie for keyword recognition
+- **Syntax Analysis**: Recursive descent parser with 9-level expression precedence
+- **Symbol Table Generation**: Complete token tracking with position information
+- **Parse Tree Generation**: Detailed derivation trees showing grammar rule applications
+- **Error Recovery**: Panic-mode recovery with synchronization points
+- **Error Reporting**: Brief, clear, specific messages without jargon
 
-## Build & Run
+## ✨ Key Features
 
-**Requirements:**
-- GCC compiler (MinGW on Windows, or standard GCC on Linux/Mac)
-- Windows users: Install [MinGW](http://mingw.org/) or use [MSYS2](https://www.msys2.org/)
+✅ **Recursive Descent Parser** - Top-down parsing with one function per grammar rule  
+✅ **One-Token-at-a-Time Processing** - Memory-based token reading with lookahead  
+✅ **Comprehensive Symbol Table** - Line/column tracking for all tokens  
+✅ **Panic-Mode Error Recovery** - Robust error handling with synchronization  
+✅ **Production Quality** - Compiles with 0 warnings using `-Wall -Wextra`  
+✅ **Complete Documentation** - Transition diagrams, parse trees, and specification  
+✅ **Sample Program** - Demonstrates all language features and requirements  
 
-**Building:**
+## 📋 Language Features
+
+- **23 Contextual Keywords**: and, args, async, dyn, get, global, init, input, let, nmof, nnull, or, print, rec, req, set, stc, str, struct, switch, this, val, var
+- **27 Reserved Words**: as, base, break, case, class, const, default, do, else, enum, for, foreach, if, iface, in, new, next, nspace, null, priv, prot, pub, rdo, record, return, use, while
+- **5 Types**: bool, char, double, int, void
+- **2 Boolean Literals**: true, false
+- **3 Noise Words**: at, its, then
+- **Operators**: Arithmetic (+, -, *, /, %), Assignment (=, +=, -=, *=, /=, %=), Comparison (==, !=, >, <, >=, <=), Logical (&&, ||, !)
+- **Control Flow**: if-else, while loops, for loops with nested support
+- **I/O Statements**: input() and print()
+- **Script-Style Execution**: No main function required - statements execute sequentially
+
+## 🚀 Quick Start
+
+### Build the Compiler
 ```bash
 cd src
 gcc Cythonic.c -o cythonic.exe -Wall -Wextra -std=c11    # Windows
@@ -28,9 +44,44 @@ gcc Cythonic.c -o cythonic.exe -Wall -Wextra -std=c11    # Windows
 gcc Cythonic.c -o cythonic -Wall -Wextra -std=c11        # Linux/Mac
 ```
 
-**Running:**
+### Run Sample Program
 ```bash
-./cythonic ../samples/sample.cytho           # Analyze a file
+./cythonic ../samples/sample.cytho
+```
+
+### Expected Output
+```
+Symbol table written to: ../samples/sample.cytho.symboltable.txt
+Writing parse tree to: ../samples/sample.cytho.parsetree.txt
+Starting Syntax Analysis...
+Syntax Analysis Complete: No errors found.
+```
+
+### Generated Files
+- `sample.cytho.symboltable.txt` - 335 lines of token data (LINE, COL, TYPE, LEXEME, RAW)
+- `sample.cytho.parsetree.txt` - 1641 lines showing derivation steps
+
+## 📚 Documentation
+
+| File | Description |
+|------|-------------|
+| **DOCUMENTATION.md** | Complete specification with 6 transition diagrams and 5 parse trees |
+| **PRESENTATION_GUIDE.md** | Quick reference for project presentation |
+| **samples/sample.cytho** | Comprehensive test program (93 lines) |
+| **src/Cythonic.c** | Complete compiler implementation (1172 lines) |
+
+## 📝 Sample Program Highlights
+
+The `sample.cytho` file demonstrates **ALL** project requirements:
+
+- ✅ **13 Declarations**: Variable and constant declarations
+- ✅ **1 Input Statement**: `input(name);`
+- ✅ **5 Output Statements**: Print character, string, and variables
+- ✅ **7 Assignments**: Variable-to-variable, constant-to-variable, expression-to-variable
+- ✅ **5 Conditions**: IF, IF-ELSE IF, IF-ELSE statements
+- ✅ **3 Iterations**: Simple while loop, nested for+while loops
+
+## 🔧 Requirements
 ./cythonic ../samples/valid_syntax.cytho     # Test with valid syntax
 ./cythonic ../samples/test_new_keywords.cytho # Test keywords and operators
 ```

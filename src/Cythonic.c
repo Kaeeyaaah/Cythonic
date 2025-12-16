@@ -1,16 +1,53 @@
 /*
- * Cythonic Compiler - Single Source Implementation
- * Combines Lexer and Recursive Descent Parser.
+ * CYTHONIC COMPILER - Complete Language Specification
+ * ====================================================
  * 
- * Features:
- * - DFA-based lexical analysis with Trie keyword recognition
- * - Recursive descent parser with operator precedence
- * - Compound assignment operators (+=, -=, *=, /=, %=)
- * - Logical operators (&&, ||) with proper precedence
- * - Error recovery and detailed parse tree generation
+ * Case-insensitive scripting language with DFA lexer and recursive descent parser.
  * 
- * Usage: ./cythonic <source-file.cytho>
- * Output: <source-file.cytho.symboltable.txt> and <source-file.cytho.parsetree.txt>
+ * PROGRAM STRUCTURE:
+ *   Script-style execution (no main function required)
+ *   Statements execute sequentially from file top
+ * 
+ * IMPLEMENTED FEATURES:
+ * 
+ * 1. CONTEXTUAL KEYWORDS (23): and, args, async, dyn, get, global, init, input,
+ *    let, nmof, nnull, or, print, rec, req, set, stc, str, struct, switch,
+ *    this, val, var
+ * 
+ * 2. RESERVED WORDS (27): as, base, break, case, class, const, default, do,
+ *    else, enum, for, foreach, if, iface, in, new, next, nspace, null, priv,
+ *    prot, pub, rdo, record, return, use, while
+ * 
+ * 3. TYPES (5): bool, char, double, int, void
+ * 
+ * 4. BOOLEAN LITERALS (2): true, false
+ * 
+ * 5. NOISE WORDS (3): at, its, then (optional readability enhancers)
+ * 
+ * 4. OPERATORS:
+ *    Arithmetic: addition, subtraction, multiplication, division, modulo
+ *    Assignment: assign, compound assign (add, sub, mul, div, mod)
+ *    Comparison: equality, inequality, relational (gt, lt, ge, le)
+ *    Logical: and, or, not
+ *    Bitwise: tokenized only (and, or, xor, not)
+ * 
+ * 5. EXPRESSION PRECEDENCE (9 levels):
+ *    Primary - Postfix - Unary - Factor - Term - Comparison - And - Or - Assignment
+ * 
+ * 6. STATEMENTS: Declarations, Assignments, Input, Output, If-Else, While,
+ *    For, Blocks, Increment, Decrement
+ * 
+ * 7. LITERALS: Numbers (int, float, scientific), Strings, Characters, Booleans
+ * 
+ * RESERVED FOR FUTURE (Tokenized only): class, struct, enum, record, iface,
+ *    nspace, use, this, base, pub, priv, prot, rdo, switch, case, default,
+ *    foreach, do, new, bitwise operations
+ * 
+ * COMPILER ARCHITECTURE: 200-state DFA Trie, longest-match tokenization,
+ *    panic-mode error recovery, parse tree generation, symbol table tracking
+ * 
+ * USAGE: cythonic.exe source.cytho
+ * OUTPUT: source.cytho.symboltable.txt, source.cytho.parsetree.txt
  */
 
 #include <stdio.h>
@@ -25,12 +62,12 @@
 
 typedef enum {
     // Keywords and Types
-    KEYWORD,           // Contextual keywords (21 total)
-    RESERVED_WORD,     // Reserved words (33 total)
-    TYPE,              // Type keywords (7 total)
+    KEYWORD,           // Contextual keywords (23 total)
+    RESERVED_WORD,     // Reserved words (27 total)
+    TYPE,              // Type keywords (5 total)
     IDENTIFIER,        // User-defined identifiers
-    BOOLEAN_LITERAL,   // true, false
-    NOISE_WORD,        // at, its, then (optional fillers)
+    BOOLEAN_LITERAL,   // true, false (2 total)
+    NOISE_WORD,        // at, its, then (3 total)
     
     // Literals
     NUMBER,            // Integer, float, scientific notation
@@ -233,29 +270,30 @@ static bool trie_try_get_type(KeywordTrie* trie, int state, TokenType* out_type)
 
 static KeywordTrie* initialize_keywords() {
     KeywordTrie* trie = trie_create();
-    // Contextual Keywords
+    // Contextual Keywords (23 total) - Per PPL Project Proposal Group 8
     trie_add(trie, "and", KEYWORD); trie_add(trie, "args", KEYWORD); trie_add(trie, "async", KEYWORD);
     trie_add(trie, "dyn", KEYWORD); trie_add(trie, "get", KEYWORD); trie_add(trie, "global", KEYWORD);
-    trie_add(trie, "init", KEYWORD); trie_add(trie, "let", KEYWORD); trie_add(trie, "nmof", KEYWORD);
-    trie_add(trie, "nnull", KEYWORD); trie_add(trie, "or", KEYWORD); trie_add(trie, "rec", KEYWORD);
-    trie_add(trie, "req", KEYWORD); trie_add(trie, "set", KEYWORD); trie_add(trie, "stc", KEYWORD);
-    trie_add(trie, "str", TYPE); trie_add(trie, "struct", KEYWORD); trie_add(trie, "switch", KEYWORD);
-    trie_add(trie, "this", KEYWORD); trie_add(trie, "val", KEYWORD); trie_add(trie, "var", KEYWORD);
-    trie_add(trie, "where", KEYWORD); trie_add(trie, "const", KEYWORD); trie_add(trie, "input", KEYWORD);
-    trie_add(trie, "print", KEYWORD);
-    // Reserved Words
-    trie_add(trie, "as", RESERVED_WORD); trie_add(trie, "base", RESERVED_WORD); trie_add(trie, "bool", TYPE);
-    trie_add(trie, "break", RESERVED_WORD); trie_add(trie, "case", RESERVED_WORD); trie_add(trie, "char", TYPE);
-    trie_add(trie, "class", RESERVED_WORD); trie_add(trie, "default", RESERVED_WORD); trie_add(trie, "do", RESERVED_WORD);
-    trie_add(trie, "double", TYPE); trie_add(trie, "else", RESERVED_WORD); trie_add(trie, "enum", RESERVED_WORD);
-    trie_add(trie, "false", BOOLEAN_LITERAL); trie_add(trie, "for", RESERVED_WORD); trie_add(trie, "foreach", RESERVED_WORD);
+    trie_add(trie, "init", KEYWORD); trie_add(trie, "input", KEYWORD); trie_add(trie, "let", KEYWORD);
+    trie_add(trie, "nmof", KEYWORD); trie_add(trie, "nnull", KEYWORD); trie_add(trie, "or", KEYWORD);
+    trie_add(trie, "print", KEYWORD); trie_add(trie, "rec", KEYWORD); trie_add(trie, "req", KEYWORD);
+    trie_add(trie, "set", KEYWORD); trie_add(trie, "stc", KEYWORD); trie_add(trie, "str", KEYWORD);
+    trie_add(trie, "struct", KEYWORD); trie_add(trie, "switch", KEYWORD); trie_add(trie, "this", KEYWORD);
+    trie_add(trie, "val", KEYWORD); trie_add(trie, "var", KEYWORD);
+    // Reserved Words (27 total) - Per PPL Project Proposal Group 8
+    trie_add(trie, "as", RESERVED_WORD); trie_add(trie, "base", RESERVED_WORD); trie_add(trie, "break", RESERVED_WORD);
+    trie_add(trie, "case", RESERVED_WORD); trie_add(trie, "class", RESERVED_WORD); trie_add(trie, "const", RESERVED_WORD);
+    trie_add(trie, "default", RESERVED_WORD); trie_add(trie, "do", RESERVED_WORD); trie_add(trie, "else", RESERVED_WORD);
+    trie_add(trie, "enum", RESERVED_WORD); trie_add(trie, "for", RESERVED_WORD); trie_add(trie, "foreach", RESERVED_WORD);
     trie_add(trie, "if", RESERVED_WORD); trie_add(trie, "iface", RESERVED_WORD); trie_add(trie, "in", RESERVED_WORD);
-    trie_add(trie, "int", TYPE); trie_add(trie, "new", RESERVED_WORD); trie_add(trie, "next", RESERVED_WORD);
-    trie_add(trie, "nspace", RESERVED_WORD); trie_add(trie, "null", RESERVED_WORD); trie_add(trie, "num", TYPE);
-    trie_add(trie, "priv", RESERVED_WORD); trie_add(trie, "prot", RESERVED_WORD); trie_add(trie, "pub", RESERVED_WORD);
-    trie_add(trie, "rdo", RESERVED_WORD); trie_add(trie, "record", RESERVED_WORD); trie_add(trie, "return", RESERVED_WORD);
-    trie_add(trie, "true", BOOLEAN_LITERAL); trie_add(trie, "use", RESERVED_WORD); trie_add(trie, "void", TYPE);
-    trie_add(trie, "while", RESERVED_WORD);
+    trie_add(trie, "new", RESERVED_WORD); trie_add(trie, "next", RESERVED_WORD); trie_add(trie, "nspace", RESERVED_WORD);
+    trie_add(trie, "null", RESERVED_WORD); trie_add(trie, "priv", RESERVED_WORD); trie_add(trie, "prot", RESERVED_WORD);
+    trie_add(trie, "pub", RESERVED_WORD); trie_add(trie, "rdo", RESERVED_WORD); trie_add(trie, "record", RESERVED_WORD);
+    trie_add(trie, "return", RESERVED_WORD); trie_add(trie, "use", RESERVED_WORD); trie_add(trie, "while", RESERVED_WORD);
+    // Types (5 total) - Per PPL Project Proposal Group 8
+    trie_add(trie, "bool", TYPE); trie_add(trie, "char", TYPE); trie_add(trie, "double", TYPE);
+    trie_add(trie, "int", TYPE); trie_add(trie, "void", TYPE);
+    // Boolean Literals (2 total)
+    trie_add(trie, "false", BOOLEAN_LITERAL); trie_add(trie, "true", BOOLEAN_LITERAL);
     // Noise Words
     trie_add(trie, "at", NOISE_WORD); trie_add(trie, "its", NOISE_WORD); trie_add(trie, "then", NOISE_WORD);
     return trie;
@@ -793,7 +831,12 @@ static void expression(Parser* parser) {
 static void declaration_statement(Parser* parser) {
     enter_node(parser, "DeclarationStatement");
     // After var/const/dyn, there might be an optional type
+    // Accept TYPE tokens (bool, char, double, int, void)
     if (match(parser, TYPE)) {}
+    // Special case: accept 'str' as type (classified as KEYWORD per proposal)
+    else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "str") == 0) {
+        advance(parser);
+    }
     consume(parser, IDENTIFIER, "Expect variable name.");
     if (match(parser, EQUAL)) expression(parser);
     consume(parser, SEMICOLON, "Expect ';' after variable declaration.");
@@ -850,6 +893,10 @@ static void for_statement(Parser* parser) {
     consume(parser, LEFT_PAREN, "Expect '(' after 'for'.");
     if (match(parser, SEMICOLON)) {}
     else if (match(parser, TYPE)) declaration_statement(parser);
+    else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "str") == 0) {
+        advance(parser);
+        declaration_statement(parser);
+    }
     else if (match(parser, IDENTIFIER)) assignment_statement(parser);
     else error(parser, "Expect variable declaration or assignment in for loop.");
     
@@ -865,7 +912,12 @@ static void for_statement(Parser* parser) {
 
 static void statement(Parser* parser) {
     enter_node(parser, "Statement");
+    // Handle type declarations (TYPE tokens or 'str' KEYWORD)
     if (match(parser, TYPE)) declaration_statement(parser);
+    else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "str") == 0) {
+        advance(parser);
+        declaration_statement(parser);
+    }
     else if (check(parser, RESERVED_WORD) || check(parser, KEYWORD)) {
         if (strcmp(parser->current_token.lexeme, "while") == 0) { advance(parser); while_statement(parser); }
         else if (strcmp(parser->current_token.lexeme, "for") == 0) { advance(parser); for_statement(parser); }

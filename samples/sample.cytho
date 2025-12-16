@@ -1,293 +1,121 @@
-// ============================================
-// Comprehensive Cythonic Language Sample
-// Demonstrates ALL token types and features
-// ============================================
+// CYTHONIC SAMPLE PROGRAM
+// Demonstrates all required language features for PPL Project
+// This file tests: declarations, assignments, conditions, iterations, input/output
 
-// 1. NAMESPACE & IMPORTS (Keywords: nspace, use)
-nspace MyApp.Core;
-use System.Collections;
-use System.IO;
+// ============================================================================
+// DECLARATIONS (Required Feature)
+// ============================================================================
+var int x;
+var int y;
+var int z;
+var int sum;
+var int product;
+var int count;
+var int i;
+var int j;
+var char letter;
+var str message;
+var str name;
+const int MAX = 100;
 
-// 2. ACCESS MODIFIERS (Keywords: pub, priv, prot)
-pub class MyClass {
-    priv num counter = 0;
-    prot str name = "Cythonic";
-    pub bool isActive = true;
+// ============================================================================
+// INPUT STATEMENT (1 Required)
+// ============================================================================
+input(name);
+
+// ============================================================================
+// ASSIGNMENT STATEMENTS (3 Required)
+// ============================================================================
+
+// Assignment 1: Variable value being stored to another variable
+x = 10;
+y = x;
+
+// Assignment 2: Constant value being stored to a variable
+z = 25;
+
+// Assignment 3: Value of expression being stored to variable
+sum = x + y + z;
+
+// ============================================================================
+// OUTPUT STATEMENTS (3 Required)
+// ============================================================================
+
+// Output 1: Print one character
+letter = 'A';
+print(letter);
+
+// Output 2: Print string
+message = "Hello from Cythonic!";
+print(message);
+
+// Output 3: Print string and value of variable
+print("The sum is: ");
+print(sum);
+
+// ============================================================================
+// CONDITION STATEMENTS (3 Required)
+// ============================================================================
+
+// Condition 1: Simple IF statement
+if (x > 5) {
+    print("x is greater than 5");
 }
 
-// 3. CLASS DECLARATION (Keywords: class, pub, base, this)
-pub class Person : base {
-    // 4. TYPE DECLARATIONS (Types: int, num, str, bool, char, double, void)
-    priv int age = 25;
-    priv num salary = 50000.99;
-    priv str fullName = "John Doe";
-    priv bool isEmployed = false;
-    priv char initial = 'J';
-    priv double precision = 3.14159;
-    
-    // 5. CONSTRUCTOR with parameters
-    pub Person(str name, int years) {
-        this.fullName = name;
-        this.age = years;
-    }
-    
-    // 6. METHOD with RETURN (Keywords: return, void)
-    pub void displayInfo() {
-        print("Name: " + fullName);
-        print("Age: " + age);
-        return;
-    }
+// Condition 2: IF-ELSE IF statement
+if (y < 5) {
+    print("y is less than 5");
+} else if (y == 10) {
+    print("y equals 10");
 }
 
-// 7. INTERFACE (Keyword: iface)
-pub iface ICalculator {
-    num calculate(num x, num y);
+// Condition 3: IF-ELSE statement
+if (z > MAX) {
+    print("z exceeds maximum");
+} else {
+    print("z is within limits");
 }
 
-// 8. STRUCT (Keyword: struct)
-pub struct Point {
-    num x;
-    num y;
+// ============================================================================
+// ITERATIVE STATEMENTS (2 Required)
+// ============================================================================
+
+// Iteration 1: Simple iteration (WHILE loop)
+count = 0;
+while (count < 5) {
+    print(count);
+    count++;
 }
 
-// 9. ENUM (Keyword: enum)
-pub enum Status {
-    Active,
-    Inactive,
-    Pending
-}
-
-// 10. RECORD (Keywords: record, rec)
-pub record Employee(str Name, int Id);
-
-// 11. CONTROL FLOW - IF/ELSE with NOISE WORDS (Keywords: if, else, Noise: at, then)
-pub void checkValue(num value) {
-    if at (value > 100) then {
-        print("Value is large");
-    } else if (value > 50) {
-        print("Value is medium");
-    } else {
-        print("Value is small");
-    }
-}
-
-// 12. SWITCH/CASE (Keywords: switch, case, default, break)
-pub void checkStatus(Status s) {
-    switch (s) {
-        case Status.Active:
-            print("Active status");
-            break;
-        case Status.Inactive:
-            print("Inactive status");
-            break;
-        default:
-            print("Unknown status");
-            break;
-    }
-}
-
-// 13. LOOPS - WHILE with NOISE WORD (Keywords: while, Noise: its)
-pub void countdown(int start) {
-    int counter = start;
-    while its (counter > 0) {
-        print("Count: " + counter);
-        counter--;  // Decrement operator
-    }
-}
-
-// 14. FOR LOOP (Keyword: for)
-pub void forLoopExample() {
-    for (int i = 0; i < 10; i++) {
-        print("Iteration: " + i);
+// Iteration 2: Nested iteration (FOR loop with nested WHILE)
+for (i = 0; i < 3; i++) {
+    j = 0;
+    while (j < 2) {
+        product = i * j;
+        print(product);
+        j++;
     }
 }
 
-// 15. FOREACH LOOP (Keywords: foreach, in)
-pub void foreachExample(int[] numbers) {
-    foreach (int num in numbers) {
-        print("Number: " + num);
-    }
+// ============================================================================
+// ADDITIONAL FEATURES DEMONSTRATION
+// ============================================================================
+
+// Compound assignment operators
+x += 5;
+y -= 3;
+z *= 2;
+
+// Logical operators
+if (x > 0 && y > 0) {
+    print("Both x and y are positive");
 }
 
-// 16. DO-WHILE LOOP (Keywords: do, while)
-pub void doWhileExample() {
-    int count = 0;
-    do {
-        print("Count: " + count);
-        count++;
-    } while (count < 5);
+if (x == 15 || y == 7) {
+    print("Condition met");
 }
 
-// 17. VARIABLE DECLARATIONS (Keywords: let, var, val)
-pub void variableExamples() {
-    let x = 10;          // Immutable inference
-    var y = 20;          // Mutable inference
-    val z = 30;          // Constant value
-}
+// Complex expression
+sum = (x + y) * z - product;
 
-// 18. OPERATORS - All types
-pub void operatorExamples() {
-    // Arithmetic operators: +, -, *, /, %
-    num a = 10 + 5;
-    num b = 20 - 3;
-    num c = 4 * 6;
-    num d = 15 / 3;
-    num e = 17 % 4;
-    
-    // Comparison operators: ==, !=, <, >, <=, >=
-    bool eq = (a == b);
-    bool neq = (a != b);
-    bool lt = (a < b);
-    bool gt = (a > b);
-    bool lte = (a <= b);
-    bool gte = (a >= b);
-    
-    // Logical operators: &&, ||, !, and, or
-    bool and1 = (a > 5) && (b < 100);
-    bool or1 = (a == 0) || (b == 0);
-    bool not1 = !(a == b);
-    bool and2 = (a > 5) and (b < 100);
-    bool or2 = (a == 0) or (b == 0);
-    
-    // Bitwise operators: &, |, ^, ~
-    int bit1 = 5 & 3;
-    int bit2 = 5 | 3;
-    int bit3 = 5 ^ 3;
-    int bit4 = ~5;
-    
-    // Increment/Decrement: ++, --
-    a++;
-    b--;
-    
-    // Assignment: =
-    num result = 0;
-}
-
-// 19. DELIMITERS - All types: ( ) { } [ ] ; , . : ?
-pub void delimiterExamples() {
-    int[] array = [1, 2, 3, 4, 5];  // [ ] ,
-    Point p = new Point { x = 10, y = 20 };  // { } . =
-    bool condition = (a > b) ? true : false;  // ( ) ? :
-    doSomething(x, y, z);  // ( ) ,
-}
-
-// 20. LITERALS - All types
-pub void literalExamples() {
-    // Boolean literals: true, false
-    bool t = true;
-    bool f = false;
-    
-    // Number literals (integers and decimals)
-    int i1 = 42;
-    int i2 = 0;
-    num n1 = 3.14;
-    num n2 = 0.5;
-    num n3 = 123.456;
-    
-    // String literals with escape sequences
-    str s1 = "Hello World";
-    str s2 = "Line 1\nLine 2";
-    str s3 = "Tab\there";
-    str s4 = "Quote: \"Hello\"";
-    str s5 = "Backslash: \\";
-    str s6 = "Empty: ";
-    
-    // Character literals with escape sequences
-    char c1 = 'A';
-    char c2 = 'z';
-    char c3 = '\n';
-    char c4 = '\t';
-    char c5 = '\\';
-    char c6 = '\'';
-    char c7 = '\0';
-}
-
-// 21. MODIFIERS (Keywords: stc, rdo, async, req)
-pub class ModifierExamples {
-    pub stc num staticValue = 100;
-    pub rdo str readonlyValue = "constant";
-    
-    pub async void asyncMethod() {
-        // Async operation
-    }
-    
-    pub req void requiredMethod();
-}
-
-// 22. PROPERTIES (Keywords: get, set, init)
-pub class PropertyExample {
-    priv num _value;
-    
-    pub num Value {
-        get { return _value; }
-        set { _value = value; }
-    }
-    
-    pub str Name { get; init; }
-}
-
-// 23. SPECIAL KEYWORDS (Keywords: new, null, nnull, nmof, dyn, global, next, args)
-pub void specialKeywords() {
-    Person p = new Person("Jane", 30);
-    str? nullable = null;
-    str nonNull = nnull "Always has value";
-    dyn dynamic = 123;
-    global::System.Console.WriteLine("Global");
-}
-
-// 24. IDENTIFIERS - Valid examples
-pub void identifierExamples() {
-    int myVariable = 0;
-    str _privateField = "";
-    num value123 = 0.0;
-    bool isValidIdentifier = true;
-    char x = 'x';
-    str CamelCaseExample = "";
-    num snake_case_example = 0.0;
-}
-
-// 25. COMMENTS - All styles
-// Single-line comment
-/* Multi-line comment */
-/* Another
-   multi-line
-   comment */
-
-// 26. NOISE WORDS in context (Noise: at, then, its)
-pub void noiseWordDemo() {
-    // Noise word "at" in if statement
-    if at (counter > 0) then {
-        print("Using 'at' and 'then' noise words");
-    }
-    
-    // Noise word "its" in while loop
-    while its (counter < 100) {
-        counter++;
-    }
-    
-    // Without noise words (they are optional)
-    if (counter == 50) {
-        print("No noise words here");
-    }
-    
-    while (counter > 0) {
-        counter--;
-    }
-}
-
-// 27. COMPLEX NESTED EXAMPLE
-pub class ComplexExample {
-    pub void processData(int[] data) {
-        for (int i = 0; i < data.length; i++) {
-            if at (data[i] > 0) then {
-                int current = data[i];
-                while its (current > 0) {
-                    current = current / 2;
-                    print("Processing: " + current);
-                }
-            } else {
-                print("Negative value: " + data[i]);
-            }
-        }
-    }
-}
+print("Program completed successfully");
