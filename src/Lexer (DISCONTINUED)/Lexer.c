@@ -20,104 +20,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
-
-/* ============================================================================
- * TOKEN TYPE DEFINITIONS
- * ============================================================================ */
-
-typedef enum {
-    // Keywords and Types
-    KEYWORD,           // Contextual keywords (21 total)
-    RESERVED_WORD,     // Reserved words (33 total)
-    TYPE,              // Type keywords (7 total)
-    IDENTIFIER,        // User-defined identifiers
-    BOOLEAN_LITERAL,   // true, false
-    NOISE_WORD,        // at, its, then (optional fillers)
-    
-    // Literals
-    NUMBER,            // Integer, float, scientific notation
-    STRING_LITERAL,    // "text" (allows unclosed strings)
-    CHAR_LITERAL,      // 'c'
-    
-    // Arithmetic Operators
-    PLUS,              // +
-    MINUS,             // -
-    STAR,              // *
-    SLASH,             // /
-    PERCENT,           // %
-    PLUS_PLUS,         // ++
-    MINUS_MINUS,       // --
-    
-    // Assignment
-    EQUAL,             // =
-    
-    // Comparison Operators
-    EQUAL_EQUAL,       // ==
-    NOT_EQUAL,         // !=
-    GREATER,           // >
-    LESS,              // <
-    GREATER_EQUAL,     // >=
-    LESS_EQUAL,        // <=
-    
-    // Logical Operators
-    AND_AND,           // &&
-    OR_OR,             // ||
-    NOT,               // !
-    
-    // Bitwise Operators
-    AND,               // &
-    OR,                // |
-    XOR,               // ^
-    TILDE,             // ~
-    
-    // Delimiters
-    LEFT_PAREN,        // (
-    RIGHT_PAREN,       // )
-    LEFT_BRACE,        // {
-    RIGHT_BRACE,       // }
-    LEFT_BRACKET,      // [
-    RIGHT_BRACKET,     // ]
-    SEMICOLON,         // ;
-    COMMA,             // ,
-    DOT,               // .
-    COLON,             // :
-    QUESTION,          // ?
-    
-    // Other
-    COMMENT,           // // or /* */
-    INVALID,           // Invalid/unrecognized tokens (NOT ignored)
-    TOKEN_EOF          // End of file
-} TokenType;
-
-/* ============================================================================
- * TOKEN STRUCTURE
- * ============================================================================ */
-
-typedef struct {
-    TokenType type;
-    char* lexeme;      // Normalized (lowercase for identifiers/keywords)
-    char* raw;         // Original text as written
-    int line;
-    int column;
-} Token;
-
-/* ============================================================================
- * LEXER STATE
- * ============================================================================ */
-
-#define MAX_TOKENS 10000
-#define MAX_LEXEME_LENGTH 256
-#define IDENTIFIER_MAX_LENGTH 31
-
-typedef struct {
-    const char* source;
-    int length;
-    int index;
-    int line;
-    int column;
-    Token tokens[MAX_TOKENS];
-    int token_count;
-} Lexer;
+#include "Lexer.h"
 
 /* ============================================================================
  * KEYWORD TRIE (DFA) STRUCTURE
@@ -318,7 +221,7 @@ static KeywordTrie* initialize_keywords() {
  * LEXER IMPLEMENTATION
  * ============================================================================ */
 
-static Lexer* lexer_create(const char* source) {
+Lexer* lexer_create(const char* source) {
     Lexer* lexer = malloc(sizeof(Lexer));
     lexer->source = source;
     lexer->length = strlen(source);
@@ -441,39 +344,34 @@ static void lex_identifier_or_keyword(Lexer* lexer, KeywordTrie* trie, int start
     strncpy(raw, &lexer->source[start], length);
     raw[length] = '\0';
     
-    // Try keyword recognition using trie
-    int state = 0;
-    int last_accepting_state = -1;
-    TokenType last_accepting_type = IDENTIFIER;
-    
-    for (int i = 0; i < length && is_letter(raw[i]); i++) {
-        char lower = to_lower(raw[i]);
-        state = trie_move(trie, state, lower);
-        
-        if (state == -1) break;
-        
-        TokenType type;
-        if (trie_try_get_type(trie, state, &type)) {
-            last_accepting_state = state;
-            last_accepting_type = type;
-        }
-    }
-    
     // Determine token type
     TokenType type = IDENTIFIER;
     
-    if (last_accepting_state != -1) {
-        // Check if entire identifier is letters (keyword candidate)
-        bool all_letters = true;
-        for (int i = 0; i < length; i++) {
-            if (!is_letter(raw[i])) {
-                all_letters = false;
-                break;
-            }
+    // Check if entire identifier is letters (keyword candidate)
+    bool all_letters = true;
+    for (int i = 0; i < length; i++) {
+        if (!is_letter(raw[i])) {
+            all_letters = false;
+            break;
+        }
+    }
+    
+    if (all_letters) {
+        // Try keyword recognition using trie
+        int state = 0;
+        int i = 0;
+        for (; i < length; i++) {
+            char lower = to_lower(raw[i]);
+            state = trie_move(trie, state, lower);
+            if (state == -1) break;
         }
         
-        if (all_letters) {
-            type = last_accepting_type;
+        // Must match entire string AND end in accepting state
+        if (i == length) {
+            TokenType accepting_type;
+            if (trie_try_get_type(trie, state, &accepting_type)) {
+                type = accepting_type;
+            }
         }
     }
     
@@ -765,7 +663,7 @@ static void lexer_lex(Lexer* lexer, KeywordTrie* trie) {
  * TOKEN TYPE TO STRING
  * ============================================================================ */
 
-static const char* token_type_to_string(TokenType type) {
+const char* token_type_to_string(TokenType type) {
     switch (type) {
         case KEYWORD: return "KEYWORD";
         case RESERVED_WORD: return "RESERVED_WORD";
@@ -819,6 +717,24 @@ static const char* token_type_to_string(TokenType type) {
  * SYMBOL TABLE OUTPUT
  * ============================================================================ */
 
+#ifdef LEXER_MAIN
+static void escape_for_output(const char* source, char* dest, size_t dest_size) {
+    size_t i = 0, j = 0;
+    while (source[i] && j < dest_size - 1) {
+        char c = source[i++];
+        if (c == '\n') {
+            if (j < dest_size - 2) { dest[j++] = '\\'; dest[j++] = 'n'; }
+        } else if (c == '\r') {
+            if (j < dest_size - 2) { dest[j++] = '\\'; dest[j++] = 'r'; }
+        } else if (c == '\t') {
+            if (j < dest_size - 2) { dest[j++] = '\\'; dest[j++] = 't'; }
+        } else {
+            dest[j++] = c;
+        }
+    }
+    dest[j] = '\0';
+}
+
 static void write_symbol_table(Lexer* lexer, const char* output_path) {
     FILE* file = fopen(output_path, "w");
     if (!file) {
@@ -832,33 +748,39 @@ static void write_symbol_table(Lexer* lexer, const char* output_path) {
     fprintf(file, "LINE | COL | TYPE              | LEXEME                        | RAW\n");
     fprintf(file, "-----|-----|-------------------|-------------------------------|----------------------------------\n");
     
+    char lexeme_buffer[1024];
+    char raw_buffer[1024];
+
     for (int i = 0; i < lexer->token_count; i++) {
         Token* token = &lexer->tokens[i];
         if (token->type == TOKEN_EOF) continue;
         
-        // Escape special characters for display
-        char lexeme_display[MAX_LEXEME_LENGTH];
-        char raw_display[MAX_LEXEME_LENGTH];
-        
-        snprintf(lexeme_display, sizeof(lexeme_display), "%.30s", token->lexeme);
-        snprintf(raw_display, sizeof(raw_display), "%.30s", token->raw);
-        
+        escape_for_output(token->lexeme, lexeme_buffer, sizeof(lexeme_buffer));
+        escape_for_output(token->raw, raw_buffer, sizeof(raw_buffer));
+
         fprintf(file, "%4d | %3d | %-17s | %-29s | %s\n",
                 token->line,
                 token->column,
                 token_type_to_string(token->type),
-                lexeme_display,
-                raw_display);
+                lexeme_buffer,
+                raw_buffer);
     }
     
     fprintf(file, "\nEND OF SYMBOL TABLE\n");
     fclose(file);
 }
+#endif
 
 /* ============================================================================
  * MAIN FUNCTION - EXAMPLE USAGE
  * ============================================================================ */
 
+void lexer_run(Lexer* lexer) {
+    KeywordTrie* trie = initialize_keywords();
+    lexer_lex(lexer, trie);
+}
+
+#ifdef LEXER_MAIN
 int main(int argc, char** argv) {
     if (argc < 2) {
         printf("Usage: %s <input-file.cytho>\n", argv[0]);
@@ -877,8 +799,8 @@ int main(int argc, char** argv) {
     fseek(file, 0, SEEK_SET);
     
     char* source = malloc(file_size + 1);
-    fread(source, 1, file_size, file);
-    source[file_size] = '\0';
+    size_t bytes_read = fread(source, 1, file_size, file);
+    source[bytes_read] = '\0';
     fclose(file);
     
     // Initialize keyword trie
@@ -888,7 +810,8 @@ int main(int argc, char** argv) {
     Lexer* lexer = lexer_create(source);
     lexer_lex(lexer, trie);
     
-    // Print tokens to console
+    /* 
+    // Print tokens to console (Disabled for cleaner output)
     printf("[\n");
     for (int i = 0; i < lexer->token_count; i++) {
         Token* token = &lexer->tokens[i];
@@ -903,6 +826,7 @@ int main(int argc, char** argv) {
         printf("  }%s\n", (i < lexer->token_count - 2) ? "," : "");
     }
     printf("]\n");
+    */
     
     // Write symbol table
     char output_path[256];
@@ -921,3 +845,4 @@ int main(int argc, char** argv) {
     
     return 0;
 }
+#endif

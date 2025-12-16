@@ -1,0 +1,29 @@
+// ==========================================
+// INVALID CYTHONIC SYNTAX SAMPLE
+// This file contains intentional errors to
+// demonstrate the parser's error recovery.
+// ==========================================
+
+// Error 1: Missing semicolon after declaration
+int x = 10
+
+// Error 2: Missing semicolon after assignment
+x = 20
+
+// Error 3: Invalid If Syntax (Missing parentheses)
+if x > 5 {
+    print("Error");
+}
+
+// Error 4: Invalid Input Syntax (Missing parentheses)
+input x;
+
+// Error 5: Invalid For Loop Syntax (Missing semicolons)
+for (int i = 0 i < 10 i++) {
+    print(i);
+}
+
+// Error 6: Unclosed Block (Missing closing brace)
+while (x > 0) {
+    print(x);
+    // Missing '}' here
