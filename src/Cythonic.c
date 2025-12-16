@@ -234,6 +234,8 @@ static KeywordTrie* initialize_keywords() {
     trie_add(trie, "req", KEYWORD); trie_add(trie, "set", KEYWORD); trie_add(trie, "stc", KEYWORD);
     trie_add(trie, "str", TYPE); trie_add(trie, "struct", KEYWORD); trie_add(trie, "switch", KEYWORD);
     trie_add(trie, "this", KEYWORD); trie_add(trie, "val", KEYWORD); trie_add(trie, "var", KEYWORD);
+    trie_add(trie, "where", KEYWORD); trie_add(trie, "const", KEYWORD); trie_add(trie, "input", KEYWORD);
+    trie_add(trie, "print", KEYWORD);
     // Reserved Words
     trie_add(trie, "as", RESERVED_WORD); trie_add(trie, "base", RESERVED_WORD); trie_add(trie, "bool", TYPE);
     trie_add(trie, "break", RESERVED_WORD); trie_add(trie, "case", RESERVED_WORD); trie_add(trie, "char", TYPE);
@@ -761,14 +763,30 @@ static void equality(Parser* parser) {
     exit_node(parser, "Equality");
 }
 
+static void logical_and(Parser* parser) {
+    enter_node(parser, "LogicalAnd");
+    equality(parser);
+    while (match(parser, AND_AND)) equality(parser);
+    exit_node(parser, "LogicalAnd");
+}
+
+static void logical_or(Parser* parser) {
+    enter_node(parser, "LogicalOr");
+    logical_and(parser);
+    while (match(parser, OR_OR)) logical_and(parser);
+    exit_node(parser, "LogicalOr");
+}
+
 static void expression(Parser* parser) {
     enter_node(parser, "Expression");
-    equality(parser);
+    logical_or(parser);
     exit_node(parser, "Expression");
 }
 
 static void declaration_statement(Parser* parser) {
     enter_node(parser, "DeclarationStatement");
+    // After var/const/dyn, there might be an optional type
+    if (match(parser, TYPE)) {}
     consume(parser, IDENTIFIER, "Expect variable name.");
     if (match(parser, EQUAL)) expression(parser);
     consume(parser, SEMICOLON, "Expect ';' after variable declaration.");
@@ -867,6 +885,9 @@ static void statement(Parser* parser) {
         } else if (strcmp(parser->current_token.lexeme, "input") == 0) {
             advance(parser);
             input_statement(parser);
+        } else if (strcmp(parser->current_token.lexeme, "print") == 0) {
+            advance(parser);
+            output_statement(parser);
         } else if (strcmp(parser->current_token.lexeme, "var") == 0 || 
                    strcmp(parser->current_token.lexeme, "const") == 0 ||
                    strcmp(parser->current_token.lexeme, "dyn") == 0) {
@@ -878,10 +899,7 @@ static void statement(Parser* parser) {
     } else if (match(parser, LEFT_BRACE)) {
         block(parser);
     } else if (match(parser, IDENTIFIER)) {
-        Token* prev = &parser->previous_token;
-        if (prev->lexeme && strcmp(prev->lexeme, "input") == 0) input_statement(parser);
-        else if (prev->lexeme && strcmp(prev->lexeme, "print") == 0) output_statement(parser);
-        else if (check(parser, EQUAL)) assignment_statement(parser);
+        if (check(parser, EQUAL)) assignment_statement(parser);
         else if (check(parser, LEFT_PAREN)) {
             enter_node(parser, "FunctionCall");
             consume(parser, LEFT_PAREN, "Expect '(' after function name.");

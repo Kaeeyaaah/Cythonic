@@ -1,15 +1,16 @@
-# Cythonic Lexer
+# Cythonic Compiler
 
-Production-ready lexical analyser for the case-insensitive Cythonic language (`.cytho`), implemented in **C (C11 standard)**. The lexer emits a sequence of `Token` structs containing `type`, `lexeme` (normalized lowercase for identifiers/keywords), `raw`, `line`, and `column`. Keyword recognition, identifiers, numbers, operators, and delimiters are all driven by explicit character-level DFAs—no full-string comparisons or string-key maps are used.
+Production-ready compiler for the case-insensitive Cythonic language (`.cytho`), implemented in **C (C11 standard)**. The compiler includes a **lexical analyzer** (tokenizer) and a **recursive descent parser** (syntax analyzer) that processes `.cytho` source files and generates symbol tables and parse trees.
 
 ## What this project gives you
-- A **tokenizer (lexer)** that reads `.cytho` source text and breaks it into meaningful tokens.
-- A **command-line tool** that lets you run `./cythonic-lexer <file>` to see the token list for any `.cytho` file.
-- **Robust error handling** - creates `INVALID` tokens for unrecognized characters instead of crashing.
+- A **tokenizer (lexer)** that reads `.cytho` source text and breaks it into meaningful tokens using DFA-based keyword recognition.
+- A **recursive descent parser** that performs syntax analysis and generates detailed parse trees.
+- A **command-line tool** that lets you run `./cythonic <file>` to analyze any `.cytho` file.
+- **Robust error handling** - creates `INVALID` tokens for unrecognized characters and provides detailed syntax error messages.
 - **Unterminated string support** - strings without closing quotes are valid (reads until newline/EOF).
-- A **sample program** (`samples/sample.cytho`) demonstrating all language features (293 lines, 27 sections).
-- A **state-table description** of the keyword DFA (168 states) for verifying and extending keyword recognition.
+- **Sample programs** demonstrating language features and compiler capabilities.
 - **Symbol table generation** - automatically creates `.symboltable.txt` files with formatted token tables.
+- **Parse tree generation** - automatically creates `.parsetree.txt` files showing derivation trees.
 
 If you are new to lexers, think of this repository as the "front door" of the language pipeline: it reads raw text and turns it into structured pieces that later stages (parser, semantic analyser, compiler) can understand.
 
@@ -21,235 +22,362 @@ If you are new to lexers, think of this repository as the "front door" of the la
 
 **Building:**
 ```bash
-cd src/CythonicLexer
-mingw32-make        # On Windows with MinGW
+cd src
+gcc Cythonic.c -o cythonic.exe -Wall -Wextra -std=c11    # Windows
 # OR
-make                # On Linux/Mac
+gcc Cythonic.c -o cythonic -Wall -Wextra -std=c11        # Linux/Mac
 ```
 
 **Running:**
 ```bash
-./cythonic-lexer ../../samples/sample.cytho       # Tokenize a file
-mingw32-make run                                   # Quick run on sample file
-mingw32-make test                                  # Generate symbol table
-mingw32-make clean                                 # Remove build artifacts
+./cythonic ../samples/sample.cytho           # Analyze a file
+./cythonic ../samples/valid_syntax.cytho     # Test with valid syntax
+./cythonic ../samples/test_new_keywords.cytho # Test keywords and operators
 ```
 
 **Outputs:**
-- Token stream printed to console (one token per line with type, lexeme, line, column)
 - Symbol table file: `<filename>.symboltable.txt` (formatted table of all tokens)
+- Parse tree file: `<filename>.parsetree.txt` (detailed derivation tree)
+- Console output: Syntax analysis results with error reporting
 
 ## How to try it out
-1. Open a terminal in `src/CythonicLexer` directory.
-2. Run `mingw32-make run` (Windows) or `make run` (Linux/Mac).
-3. The program prints each token showing: `LINE:COL TYPE lexeme raw`
-4. A symbol table file is automatically generated in the samples directory.
-5. Edit or create your own `.cytho` file and run: `./cythonic-lexer yourfile.cytho`
+1. Open a terminal in `src` directory.
+2. Compile: `gcc Cythonic.c -o cythonic.exe -Wall -Wextra -std=c11`
+3. Run: `./cythonic.exe ../samples/valid_syntax.cytho`
+4. Two files are automatically generated:
+   - `valid_syntax.cytho.symboltable.txt` - Token table
+   - `valid_syntax.cytho.parsetree.txt` - Parse tree
+5. Edit or create your own `.cytho` file and run: `./cythonic yourfile.cytho`
 
 ## Key Features
 
-### C-Specific Enhancements
+### Compiler Features
+- **Two-Phase Analysis**: Lexical analysis (tokenization) followed by syntax analysis (parsing)
 - **INVALID Token Type**: Unrecognized characters (like `@`, `#`, `$`) create `INVALID` tokens instead of causing crashes
 - **Unterminated Strings**: Strings without closing quotes are valid - the lexer reads until newline or EOF
-- **Non-Fatal Error Handling**: Lexer continues processing after errors, collecting all tokens and issues
+- **Non-Fatal Error Handling**: Compiler continues processing after errors, collecting all tokens and issues
 - **Memory Management**: Dynamic memory allocation for source text, proper cleanup on exit
 - **Symbol Table Generation**: Automatically creates formatted token tables for debugging
+- **Parse Tree Generation**: Produces detailed derivation trees showing grammar rule applications
+- **Panic-Mode Error Recovery**: Parser can recover from errors and continue analysis
 
 ### Sample Output
 ```
-Input: if at (counter > 0) then { print("Hello"); }
+Input File (test.cytho):
+if at (x > 0) then {
+    print("Positive");
+}
 
-Output:
-1:1 RESERVED_WORD if if
-1:4 NOISE_WORD at at
-1:7 DELIMITER ( (
-1:8 IDENTIFIER counter counter
-1:16 OPERATOR > >
-1:18 NUMBER 0 0
-1:19 DELIMITER ) )
-1:21 NOISE_WORD then then
-1:26 DELIMITER { {
-1:28 IDENTIFIER print print
-1:33 DELIMITER ( (
-1:34 STRING_LITERAL Hello "Hello"
-1:41 DELIMITER ) )
-1:42 DELIMITER ; ;
-1:44 DELIMITER } }
-1:45 EOF  
+Console Output:
+Symbol table written to: test.cytho.symboltable.txt
+Writing parse tree to: test.cytho.parsetree.txt
+Starting Syntax Analysis...
+Syntax Analysis Complete: No errors found.
+
+Symbol Table (test.cytho.symboltable.txt):
+LINE | COL | TYPE              | LEXEME                        | RAW
+-----|-----|-------------------|-------------------------------|------------------
+   1 |   1 | RESERVED_WORD     | if                            | if
+   1 |   4 | NOISE_WORD        | at                            | at
+   1 |   7 | LEFT_PAREN        | (                             | (
+   1 |   8 | IDENTIFIER        | x                             | x
+   1 |  10 | GREATER           | >                             | >
+   1 |  12 | NUMBER            | 0                             | 0
+   1 |  13 | RIGHT_PAREN       | )                             | )
+   1 |  15 | NOISE_WORD        | then                          | then
+   1 |  20 | LEFT_BRACE        | {                             | {
+   2 |   5 | KEYWORD           | print                         | print
+   2 |  10 | LEFT_PAREN        | (                             | (
+   2 |  11 | STRING_LITERAL    | Positive                      | "Positive"
+   2 |  21 | RIGHT_PAREN       | )                             | )
+   2 |  22 | SEMICOLON         | ;                             | ;
+   3 |   1 | RIGHT_BRACE       | }                             | }
+
+Parse Tree (excerpt from test.cytho.parsetree.txt):
+Enter <Statement>
+  Enter <IfStatement>
+    Enter <Expression>
+      Enter <LogicalOr>
+        Enter <LogicalAnd>
+          Enter <Equality>
+            Enter <Comparison>
+              ...
 ```
 
-## Sample Tokenization
+## Language Features
 
-The `samples/sample.cytho` file contains a **comprehensive demonstration** of all Cythonic language features:
-- All 12 token types (KEYWORD, RESERVED_WORD, TYPE, IDENTIFIER, NUMBER, STRING_LITERAL, CHAR_LITERAL, OPERATOR, DELIMITER, BOOLEAN_LITERAL, COMMENT, NOISE_WORD, EOF, INVALID)
-- 21 Contextual Keywords (KEYWORD): and, args, async, dyn, get, global, init, let, nmof, nnull, or, rec, req, set, stc, str, struct, switch, this, val, var
-- 33 Reserved Words (RESERVED_WORD): as, base, bool, break, case, char, class, default, do, double, else, enum, false, for, foreach, if, iface, in, int, new, next, nspace, null, num, priv, prot, pub, rdo, record, return, true, use, void, while
-- 3 Noise Words (NOISE_WORD): at, its, then
-- 7 Types (TYPE): bool, char, int, double, str, num, void
-- All operators (arithmetic, logical, bitwise, comparison, assignment)
-- All delimiters and brackets
-- String/char literals with escape sequences
-- Single-line and multi-line comments
-- Nested control structures with noise words
+The Cythonic compiler recognizes and processes:
+- **Token Types**: KEYWORD, RESERVED_WORD, TYPE, IDENTIFIER, NUMBER, STRING_LITERAL, CHAR_LITERAL, OPERATOR, DELIMITER, BOOLEAN_LITERAL, COMMENT, NOISE_WORD, EOF, INVALID
+- **24 Contextual Keywords (KEYWORD)**: and, args, async, const, dyn, get, global, init, input, let, nmof, nnull, or, print, rec, req, set, stc, struct, switch, this, val, var, where
+- **26 Reserved Words (RESERVED_WORD)**: as, base, break, case, class, default, do, else, enum, for, foreach, if, iface, in, new, next, nspace, null, priv, prot, pub, rdo, record, return, use, while
+- **7 Type Keywords (TYPE)**: bool, char, int, double, str, num, void
+- **2 Boolean Literals**: true, false
+- **3 Noise Words (NOISE_WORD)**: at, its, then (optional readability enhancers)
+- **Operators**: 
+  - Arithmetic: `+`, `-`, `*`, `/`, `%`, `++`, `--`
+  - Assignment: `=`, `+=`, `-=`, `*=`, `/=`, `%=`
+  - Comparison: `==`, `!=`, `>`, `<`, `>=`, `<=`
+  - Logical: `&&`, `||`, `!`
+  - Bitwise: `&`, `|`, `^`, `~`
+- **Delimiters**: `(`, `)`, `{`, `}`, `[`, `]`, `;`, `,`, `.`, `:`, `?`
+- **Grammar Support**:
+  - Variable declarations with optional type inference (`var`, `const`, `dyn`)
+  - Assignments with compound operators
+  - Control flow: `if`/`else`, `while`, `for`
+  - I/O statements: `input()`, `print()`
+  - Expressions with full operator precedence
+  - Blocks and nested statements
 
-Input (excerpt from `samples/sample.cytho`):
+### Sample Code (from `samples/test_new_keywords.cytho`):
 
 ```cytho
-// Noise words demonstration
-pub void noiseWordDemo() {
-    // Noise word "at" in if statement
-    if at (counter > 0) then {
-        print("Using 'at' and 'then' noise words");
-    }
-    
-    // Noise word "its" in while loop
-    while its (counter < 100) {
-        counter++;
-    }
-    
-    // Without noise words (they are optional)
-    if (counter == 50) {
-        print("No noise words here");
-    }
+// Test new keywords: where, const, input, print
+const int x = 10;
+var y = 5;
+
+input(y);
+print("Value: ");
+print(y);
+
+// Test logical operators
+if (x > 5 && y < 20) {
+    print("Both conditions true");
+}
+
+if (x == 10 || y == 0) {
+    print("At least one condition true");
 }
 ```
 
-## Keyword DFA State Table (168 states, 57 keywords)
+### Noise Words Example:
 
-**Note**: This trie includes 21 contextual keywords (KEYWORD), 33 reserved words (RESERVED_WORD), and 3 noise words (NOISE_WORD).
+```cytho
+// Noise words are optional readability enhancers
+if at (counter > 0) then {
+    print("Using 'at' and 'then' noise words");
+}
 
-```
-STATE | ACCEPT | TYPE            | TRANSITIONS
---------------------------------------------------------------------------------
-    0 |  no   | -               | a->1,b->11,c->22,d->33,e->47,f->54,g->65,i->73,l->82,n->85,o->106,p->108,r->116,s->129,t->143,u->150,v->153,w->160
-    1 |  no   | -               | n->2,r->4,s->7,t->165
-    2 |  no   | -               | d->3
-    3 | yes   | KEYWORD         | (and)
-    4 |  no   | -               | g->5
-    5 |  no   | -               | s->6
-    6 | yes   | KEYWORD         | (args)
-    7 | yes   | RESERVED_WORD   | (as) y->8
-    8 |  no   | -               | n->9
-    9 |  no   | -               | c->10
-   10 | yes   | KEYWORD         | (async)
-   ...
-  165 | yes   | NOISE_WORD      | (at)
-  167 | yes   | NOISE_WORD      | (its)
-  168 | yes   | NOISE_WORD      | (then)
+while its (counter < 100) {
+    counter++;
+}
+
+// Same code without noise words (both valid)
+if (counter > 0) {
+    print("No noise words here");
+}
 ```
 
-**Full DFA states**: 168 total states recognizing all keywords, reserved words, and noise words with case-insensitive matching.
+## Parser Grammar
 
-## Operator DFA (Longest-Match)
+The recursive descent parser implements the following grammar with proper operator precedence:
 
+### Expression Precedence (highest to lowest):
+1. **Primary**: literals, identifiers, parenthesized expressions
+2. **Postfix**: `++`, `--`
+3. **Unary**: `!`, `-` (negation)
+4. **Factor**: `*`, `/`, `%`
+5. **Term**: `+`, `-`
+6. **Comparison**: `>`, `<`, `>=`, `<=`
+7. **Equality**: `==`, `!=`
+8. **Logical AND**: `&&`
+9. **Logical OR**: `||`
+
+### Statement Grammar:
 ```
-State OP0 (start)
-	'+' -> OP_PLUS1, '-' -> OP_MINUS1, '=' -> OP_EQ1, '!' -> OP_BANG1,
-	'>' -> OP_GT1, '<' -> OP_LT1, '&' -> OP_AMP1, '|' -> OP_BAR1,
-	other operator characters -> emit first character as a standalone operator/delimiter
-State OP_PLUS1: '+' -> emit "++"; otherwise emit '+'
-State OP_MINUS1: '-' -> emit "--"; otherwise emit '-'
-State OP_EQ1: '=' -> emit "=="; otherwise emit '='
-State OP_BANG1: '=' -> emit "!="; otherwise emit '!'
-State OP_GT1: '=' -> emit ">="; otherwise emit '>'
-State OP_LT1: '=' -> emit "<="; otherwise emit '<'
-State OP_AMP1: '&' -> emit "&&"; otherwise emit '&'
-State OP_BAR1: '|' -> emit "||"; otherwise emit '|'
+Program          → Statement*
+Statement        → Declaration | Assignment | Input | Output | 
+                   If | While | For | Return | Block
+Declaration      → (TYPE | var | const | dyn) [TYPE] IDENTIFIER [= Expression] ;
+Assignment       → IDENTIFIER (= | += | -= | *= | /= | %=) Expression ;
+Input            → input ( IDENTIFIER ) ;
+Output           → print ( Expression ) ;
+If               → if [at] ( Expression ) [then] Statement [else Statement]
+While            → while [its] ( Expression ) Statement
+For              → for ( (Declaration | Assignment | ;) [Expression] ; [Expression] ) Statement
+Return           → return [Expression] ;
+Block            → { Statement* }
 ```
 
-## Tokenisation Notes
-- **Keywords vs Reserved Words**: Keywords (21) are contextual and can be used as identifiers in some contexts. Reserved words (33) are strictly reserved. Both are recognized by the same DFA trie.
-- **Noise words** (`at`, `its`, `then`) are optional filler words that enhance readability but have no semantic meaning. They are tokenized as `NOISE_WORD` type.
-- **Case-insensitive**: All keywords, identifiers, and noise words are normalized to lowercase in the `lexeme` field, while preserving original case in `raw`.
+**Note**: `[at]`, `[its]`, `[then]` are optional noise words for readability.## Operator Recognition (Longest-Match)
+
+The lexer uses longest-match semantics to correctly tokenize multi-character operators:
+
+| Input | Tokens | Notes |
+|-------|--------|-------|
+| `x+=5` | `IDENTIFIER`, `PLUS_EQUAL`, `NUMBER` | Compound assignment |
+| `x++` | `IDENTIFIER`, `PLUS_PLUS` | Postfix increment |
+| `x+y` | `IDENTIFIER`, `PLUS`, `IDENTIFIER` | Binary addition |
+| `x==y` | `IDENTIFIER`, `EQUAL_EQUAL`, `IDENTIFIER` | Equality comparison |
+| `x=y` | `IDENTIFIER`, `EQUAL`, `IDENTIFIER` | Assignment |
+| `x&&y` | `IDENTIFIER`, `AND_AND`, `IDENTIFIER` | Logical AND |
+| `x&y` | `IDENTIFIER`, `AND`, `IDENTIFIER` | Bitwise AND |
+
+**Critical**: The lexer checks compound operators (`+=`, `-=`, `*=`, `/=`, `%=`) **before** single-character operators to ensure correct tokenization.
+
+## Implementation Notes
+
+### Lexical Analysis
+- **Keywords vs Reserved Words**: Keywords (24) are contextual, reserved words (26) are strictly reserved. Both use the same Trie-based DFA for O(n) recognition.
+- **Noise words** (`at`, `its`, `then`) are optional readability enhancers with no semantic meaning, tokenized as `NOISE_WORD`.
+- **Case-insensitive**: All keywords, identifiers, and noise words normalized to lowercase in `lexeme`, original case preserved in `raw`.
 - **INVALID tokens**: Unrecognized characters like `@`, `#`, `$` produce `INVALID` tokens instead of crashing.
-- **Unterminated strings**: Strings without closing `"` are valid - the lexer reads until newline or EOF. This differs from strict implementations.
-- **Position tracking**: Line and column numbers are accurately tracked, with escape sequences counted as single characters for column purposes.
-- **Numeric DFA**: Supports integers (`123`), floats (`0.5`, `.5`, `10.`), and scientific notation (`1e10`, `1.23e-4`).
-- **String escapes**: Recognizes `\n`, `\t`, `\\`, `\"`, `\'`, `\r`, `\b`, `\f`, `\0`.
-- **Comments**: Single-line (`//`) and multi-line (`/* */`) comments are tokenized as `COMMENT` tokens with content normalized to lowercase.
-- **Operators**: Longest-match semantics for multi-character operators (`>=`, `==`, `++`, `&&`, `||`).
-- **Delimiters**: Punctuation `;`, `,`, `.`, `(`, `)`, `{`, `}`, `[`, `]`, `:`, `?` emit `DELIMITER` tokens.
+- **Unterminated strings**: Strings without closing `"` are valid - lexer reads until newline or EOF.
+- **Position tracking**: Line and column numbers accurately tracked for error reporting.
+- **Numeric support**: Integers (`123`), floats (`0.5`, `.5`, `10.`), scientific notation (`1e10`, `1.23e-4`).
+- **String escapes**: `\n`, `\t`, `\\`, `\"`, `\'`, `\r`, `\b`, `\f`, `\0`.
+- **Comments**: Single-line (`//`) and multi-line (`/* */`) tokenized as `COMMENT`.
+- **Operators**: Longest-match semantics for multi-character operators (`>=`, `==`, `++`, `&&`, `||`, `+=`, `-=`, etc.).
+
+### Syntax Analysis
+- **Recursive descent**: Top-down parsing with one function per non-terminal.
+- **Operator precedence**: Proper precedence chain from primary → postfix → unary → factor → term → comparison → equality → logical_and → logical_or.
+- **Error recovery**: Panic-mode recovery continues parsing after errors to report multiple issues.
+- **Parse tree**: Detailed derivation tree shows all grammar rule applications.
+- **Noise word handling**: Parser optionally consumes noise words in `if` and `while` statements.
 
 ## Project Layout
-- `src/CythonicLexer/` – C lexer implementation
-  - `Lexer.c` – Main lexer implementation (1,200+ lines)
-  - `Makefile` – Build system for GCC/MinGW
-  - `LEXER_C_README.md` – Detailed C implementation documentation
-- `samples/` – Test files
-  - `sample.cytho` – Comprehensive sample demonstrating all features (293 lines)
-  - `noise_words_test.cytho` – Dedicated noise word tests
-- `COMPLIANCE.md` – Language compliance report
+```
+Cythonic/
+├── src/
+│   ├── Cythonic.c              # Main compiler (lexer + parser)
+│   ├── Makefile                # Build configuration
+│   ├── ParsingTable.md         # LL(1) parsing table documentation
+│   └── TransitionDiagram.mermaid # State diagram visualization
+├── samples/
+│   ├── sample.cytho            # Comprehensive language demo (293 lines)
+│   ├── valid_syntax.cytho      # Valid syntax test suite
+│   ├── test_new_keywords.cytho # Keyword and operator tests
+│   └── test_compound_ops.cytho # Compound assignment tests
+└── README.md                   # This file
+```
 
-## Implementation Details
+## Core Data Structures
 
-### Token Structure
+### Token
 ```c
 typedef struct {
-    TokenType type;
-    char lexeme[32];   // Normalized (lowercase), max 31 chars + null
-    char raw[64];      // Original text as written, max 63 chars + null
-    int line;
-    int column;
+    TokenType type;    // Token classification
+    char* lexeme;      // Normalized text (lowercase)
+    char* raw;         // Original text as written
+    int line;          // Line number (1-indexed)
+    int column;        // Column number (1-indexed)
 } Token;
 ```
 
-### Keyword Trie Structure
-```c
-typedef struct KeywordNode {
-    int transitions[26];      // a-z transitions
-    bool is_accepting;        // Is this an accepting state?
-    TokenType accepting_type; // KEYWORD, RESERVED_WORD, TYPE, etc.
-} KeywordNode;
-```
-
-### Lexer Structure
+### Keyword Trie (DFA)
 ```c
 typedef struct {
-    char *source;        // Source code string
-    size_t position;     // Current position in source
-    int line;            // Current line number (1-indexed)
-    int column;          // Current column number (1-indexed)
-    char current;        // Current character
-    char peek;           // Next character (lookahead)
+    int transitions[26];       // a-z transitions
+    bool is_accepting;         // Accepting state?
+    TokenType accepting_type;  // KEYWORD, RESERVED_WORD, TYPE, etc.
+} TrieNode;
+
+typedef struct {
+    TrieNode nodes[200];  // 200 states for all keywords
+    int node_count;
+} KeywordTrie;
+```
+
+### Lexer
+```c
+typedef struct {
+    const char* source;  // Source code
+    int length;          // Source length
+    int index;           // Current position
+    int line;            // Current line (1-indexed)
+    int column;          // Current column (1-indexed)
+    KeywordTrie* trie;   // Keyword DFA
 } Lexer;
 ```
 
-## Lexer Flow
+### Parser
+```c
+typedef struct {
+    Token* tokens;           // Token array
+    int token_count;         // Number of tokens
+    int current;             // Current token index
+    Token current_token;     // Current token
+    Token previous_token;    // Previous token
+    bool panic_mode;         // Error recovery state
+    int error_count;         // Number of errors
+    FILE* parse_tree_file;   // Parse tree output
+    int depth;               // Parse tree depth
+} Parser;
+```
+
+## Compiler Pipeline
 
 ```
-Source Text Input → Character Stream → Token Recognition → Token List Output
-     ↓                    ↓                    ↓                    ↓
-  "if (x)"         Scan char by char    Identify patterns    [KEYWORD,DELIMITER,IDENTIFIER,DELIMITER,EOF]
+Source File (.cytho)
+        ↓
+┌───────────────────┐
+│ LEXICAL ANALYSIS  │  Character stream → Token stream
+│  (Tokenization)   │  - Keyword DFA recognition
+│                   │  - Operator longest-match
+└────────┬──────────┘  - Position tracking
+         ↓
+   Token Stream
+         ↓
+┌───────────────────┐
+│ SYNTAX ANALYSIS   │  Token stream → Parse tree
+│ (Recursive Descent│  - Grammar validation
+│     Parser)       │  - Error recovery
+└────────┬──────────┘  - Derivation tree
+         ↓
+┌─────────────────────────────────┐
+│         OUTPUT FILES            │
+│  1. Symbol Table (.symboltable) │
+│  2. Parse Tree (.parsetree)     │
+│  3. Console Error Report        │
+└─────────────────────────────────┘
 ```
 
 ### Processing Steps:
-1. **Initialization**: Load source text, build keyword trie (168 states)
-2. **Main Loop**: Skip whitespace, identify token start, classify first character
-3. **Token Recognition**: 
-   - `//` or `/*` → Comment
-   - Letter/underscore → Identifier or Keyword (DFA)
-   - Digit → Number
-   - Quote → String/Char literal
-   - Operator char → Operator/Delimiter (longest match)
-   - Unknown → INVALID token
-4. **Position Tracking**: Update line/column after each character
-5. **Output**: Emit token with type, lexeme, raw, line, column
+1. **Load Source**: Read `.cytho` file into memory
+2. **Build Keyword Trie**: Initialize DFA with 200 states for all keywords
+3. **Tokenization**: 
+   - Skip whitespace, track line/column
+   - Recognize patterns: comments, identifiers, keywords, numbers, strings, operators
+   - Generate token list with position information
+4. **Parsing**: 
+   - Build recursive descent parser from token stream
+   - Apply grammar rules with precedence climbing
+   - Generate parse tree with error recovery
+5. **Output**: 
+   - Write symbol table (formatted token list)
+   - Write parse tree (derivation structure)
+   - Report syntax errors with line/column
 
-## Key Design Principles
+## Design Principles
 
-| Feature | Benefit |
-|---------|---------|
-| **DFA keyword recognition** | O(n) time, no hash lookups |
-| **Position tracking** | Accurate error reporting |
-| **INVALID tokens** | Graceful error recovery |
-| **Unterminated strings** | Flexible parsing for incomplete input |
-| **Case-insensitive** | User-friendly (COUNT = count) |
-| **Longest match** | Correct multi-char operators (>= not > =) |
-| **No string maps** | Constant memory per character |
+| Principle | Implementation | Benefit |
+|-----------|----------------|---------|
+| **DFA-based lexing** | Trie keyword recognition | O(n) tokenization, no hash lookups |
+| **Longest match** | Check compound ops before single | Correct tokenization of `+=` vs `+` |
+| **Recursive descent** | One function per non-terminal | Clear grammar mapping, maintainable |
+| **Operator precedence** | Precedence climbing | Correct expression evaluation order |
+| **Error recovery** | Panic mode with synchronization | Multiple errors reported per run |
+| **Position tracking** | Line/column in every token | Precise error messages |
+| **Case insensitivity** | Normalize to lowercase | User-friendly (`IF` = `if`) |
+| **Single-pass compilation** | Lexer + parser in one pass | Efficient processing |
 
-This architecture ensures **O(n) time complexity** with **constant memory per character**, making it production-ready for large source files.
+**Complexity**: O(n) time, O(n) space where n = source file size
+
+## Future Enhancements
+
+The current parser supports basic control flow and expressions. Planned features:
+- ✅ Compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`)
+- ✅ Logical operators (`&&`, `||`)
+- ✅ Keywords: `const`, `input`, `print`, `where`
+- ⚠️ Advanced features (recognized as tokens, parser not implemented):
+  - Class definitions (`class`, `iface`, `record`, `struct`, `enum`)
+  - Namespace declarations (`nspace`, `use`)
+  - Advanced loops (`foreach`, `switch`)
+  - Function definitions and calls
+  - Property accessors (`get`, `set`, `init`)
+  - Advanced types and generics
 
 ## Documentation
-- See `src/CythonicLexer/LEXER_C_README.md` for detailed C implementation guide
-- See `COMPLIANCE.md` for language specification compliance
-- See `samples/sample.cytho` for comprehensive language examples
+- `src/ParsingTable.md` - LL(1) parsing table and grammar
+- `src/TransitionDiagram.mermaid` - Lexer state diagram
+- `samples/*.cytho` - Test cases and examples
