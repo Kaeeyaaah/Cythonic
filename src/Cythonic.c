@@ -1,9 +1,16 @@
 /*
  * Cythonic Compiler - Single Source Implementation
- * Combines Lexer and Parser into a single executable.
+ * Combines Lexer and Recursive Descent Parser.
+ * 
+ * Features:
+ * - DFA-based lexical analysis with Trie keyword recognition
+ * - Recursive descent parser with operator precedence
+ * - Compound assignment operators (+=, -=, *=, /=, %=)
+ * - Logical operators (&&, ||) with proper precedence
+ * - Error recovery and detailed parse tree generation
  * 
  * Usage: ./cythonic <source-file.cytho>
- * Output: <source-file.cytho.parsetree.txt>
+ * Output: <source-file.cytho.symboltable.txt> and <source-file.cytho.parsetree.txt>
  */
 
 #include <stdio.h>
@@ -899,7 +906,10 @@ static void statement(Parser* parser) {
     } else if (match(parser, LEFT_BRACE)) {
         block(parser);
     } else if (match(parser, IDENTIFIER)) {
-        if (check(parser, EQUAL)) assignment_statement(parser);
+        if (check(parser, EQUAL) || check(parser, PLUS_EQUAL) || check(parser, MINUS_EQUAL) ||
+            check(parser, STAR_EQUAL) || check(parser, SLASH_EQUAL) || check(parser, PERCENT_EQUAL)) {
+            assignment_statement(parser);
+        }
         else if (check(parser, LEFT_PAREN)) {
             enter_node(parser, "FunctionCall");
             consume(parser, LEFT_PAREN, "Expect '(' after function name.");

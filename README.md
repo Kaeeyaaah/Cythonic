@@ -54,7 +54,7 @@ gcc Cythonic.c -o cythonic -Wall -Wextra -std=c11        # Linux/Mac
 ### Compiler Features
 - **Two-Phase Analysis**: Lexical analysis (tokenization) followed by syntax analysis (parsing)
 - **INVALID Token Type**: Unrecognized characters (like `@`, `#`, `$`) create `INVALID` tokens instead of causing crashes
-- **Unterminated Strings**: Strings without closing quotes are valid - the lexer reads until newline or EOF
+- **Unterminated Strings**: Strings without closing quotes are valid within a single line - the lexer reads until newline
 - **Non-Fatal Error Handling**: Compiler continues processing after errors, collecting all tokens and issues
 - **Memory Management**: Dynamic memory allocation for source text, proper cleanup on exit
 - **Symbol Table Generation**: Automatically creates formatted token tables for debugging
@@ -118,15 +118,16 @@ The Cythonic compiler recognizes and processes:
   - Assignment: `=`, `+=`, `-=`, `*=`, `/=`, `%=`
   - Comparison: `==`, `!=`, `>`, `<`, `>=`, `<=`
   - Logical: `&&`, `||`, `!`
-  - Bitwise: `&`, `|`, `^`, `~`
+  - Note: Bitwise operators (`&`, `|`, `^`, `~`) are recognized by the lexer but not yet implemented in the parser
 - **Delimiters**: `(`, `)`, `{`, `}`, `[`, `]`, `;`, `,`, `.`, `:`, `?`
 - **Grammar Support**:
   - Variable declarations with optional type inference (`var`, `const`, `dyn`)
-  - Assignments with compound operators
+  - Assignment statements (`=`) and compound assignments (`+=`, `-=`, `*=`, `/=`, `%=`)
   - Control flow: `if`/`else`, `while`, `for`
   - I/O statements: `input()`, `print()`
-  - Expressions with full operator precedence
+  - Expressions with operator precedence (arithmetic, comparison, logical)
   - Blocks and nested statements
+  - Increment/decrement statements (`++`, `--`)
 
 ### Sample Code (from `samples/test_new_keywords.cytho`):
 
@@ -175,12 +176,14 @@ The recursive descent parser implements the following grammar with proper operat
 1. **Primary**: literals, identifiers, parenthesized expressions
 2. **Postfix**: `++`, `--`
 3. **Unary**: `!`, `-` (negation)
-4. **Factor**: `*`, `/`, `%`
-5. **Term**: `+`, `-`
+4. **Factor**: `*`, `/`, `%` (multiplication, division, modulo)
+5. **Term**: `+`, `-` (addition, subtraction)
 6. **Comparison**: `>`, `<`, `>=`, `<=`
 7. **Equality**: `==`, `!=`
 8. **Logical AND**: `&&`
 9. **Logical OR**: `||`
+
+**Note**: Bitwise operators are recognized as tokens but not yet integrated into the expression hierarchy.
 
 ### Statement Grammar:
 ```
@@ -221,7 +224,7 @@ The lexer uses longest-match semantics to correctly tokenize multi-character ope
 - **Noise words** (`at`, `its`, `then`) are optional readability enhancers with no semantic meaning, tokenized as `NOISE_WORD`.
 - **Case-insensitive**: All keywords, identifiers, and noise words normalized to lowercase in `lexeme`, original case preserved in `raw`.
 - **INVALID tokens**: Unrecognized characters like `@`, `#`, `$` produce `INVALID` tokens instead of crashing.
-- **Unterminated strings**: Strings without closing `"` are valid - lexer reads until newline or EOF.
+- **Unterminated strings**: Strings without closing `"` are valid within a single line - lexer reads until newline (not multi-line).
 - **Position tracking**: Line and column numbers accurately tracked for error reporting.
 - **Numeric support**: Integers (`123`), floats (`0.5`, `.5`, `10.`), scientific notation (`1e10`, `1.23e-4`).
 - **String escapes**: `\n`, `\t`, `\\`, `\"`, `\'`, `\r`, `\b`, `\f`, `\0`.
@@ -365,11 +368,15 @@ Source File (.cytho)
 
 ## Future Enhancements
 
-The current parser supports basic control flow and expressions. Planned features:
-- ✅ Compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`)
-- ✅ Logical operators (`&&`, `||`)
-- ✅ Keywords: `const`, `input`, `print`, `where`
-- ⚠️ Advanced features (recognized as tokens, parser not implemented):
+The current parser supports basic control flow and expressions. Implementation status:
+- ✅ **Fully Implemented**:
+  - Compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`)
+  - Logical operators (`&&`, `||`) with proper precedence
+  - Keywords: `const`, `input`, `print`, `where`
+  - Increment/decrement operators (`++`, `--`)
+- ⚠️ **Tokenized but not parsed**:
+  - Bitwise operators (`&`, `|`, `^`, `~`)
+- ⚠️ **Advanced features** (recognized as keywords, parser not implemented):
   - Class definitions (`class`, `iface`, `record`, `struct`, `enum`)
   - Namespace declarations (`nspace`, `use`)
   - Advanced loops (`foreach`, `switch`)
