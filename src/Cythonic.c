@@ -41,6 +41,11 @@ typedef enum {
     
     // Assignment
     EQUAL,             // =
+    PLUS_EQUAL,        // +=
+    MINUS_EQUAL,       // -=
+    STAR_EQUAL,        // *=
+    SLASH_EQUAL,       // /=
+    PERCENT_EQUAL,     // %=
     
     // Comparison Operators
     EQUAL_EQUAL,       // ==
@@ -107,6 +112,11 @@ const char* token_type_to_string(TokenType type) {
         case PLUS_PLUS: return "PLUS_PLUS";
         case MINUS_MINUS: return "MINUS_MINUS";
         case EQUAL: return "EQUAL";
+        case PLUS_EQUAL: return "PLUS_EQUAL";
+        case MINUS_EQUAL: return "MINUS_EQUAL";
+        case STAR_EQUAL: return "STAR_EQUAL";
+        case SLASH_EQUAL: return "SLASH_EQUAL";
+        case PERCENT_EQUAL: return "PERCENT_EQUAL";
         case EQUAL_EQUAL: return "EQUAL_EQUAL";
         case NOT_EQUAL: return "NOT_EQUAL";
         case GREATER: return "GREATER";
@@ -486,7 +496,13 @@ Token lexer_next_token(Lexer* lexer) {
             TokenType type = INVALID;
             int advance_count = 1;
             
-            if (current == '+' && next == '+') { type = PLUS_PLUS; advance_count = 2; }
+            // Two-character operators - check compound assignments first
+            if (current == '+' && next == '=') { type = PLUS_EQUAL; advance_count = 2; }
+            else if (current == '-' && next == '=') { type = MINUS_EQUAL; advance_count = 2; }
+            else if (current == '*' && next == '=') { type = STAR_EQUAL; advance_count = 2; }
+            else if (current == '/' && next == '=') { type = SLASH_EQUAL; advance_count = 2; }
+            else if (current == '%' && next == '=') { type = PERCENT_EQUAL; advance_count = 2; }
+            else if (current == '+' && next == '+') { type = PLUS_PLUS; advance_count = 2; }
             else if (current == '-' && next == '-') { type = MINUS_MINUS; advance_count = 2; }
             else if (current == '=' && next == '=') { type = EQUAL_EQUAL; advance_count = 2; }
             else if (current == '!' && next == '=') { type = NOT_EQUAL; advance_count = 2; }
@@ -761,19 +777,15 @@ static void declaration_statement(Parser* parser) {
 
 static void assignment_statement(Parser* parser) {
     enter_node(parser, "AssignmentStatement");
+    // Check for compound assignment operators first
     if (match(parser, EQUAL)) {}
-    else if (match(parser, PLUS) && match(parser, EQUAL)) {}
-    else if (match(parser, MINUS) && match(parser, EQUAL)) {}
-    else if (match(parser, STAR) && match(parser, EQUAL)) {}
-    else if (match(parser, SLASH) && match(parser, EQUAL)) {}
-    else if (match(parser, PERCENT) && match(parser, EQUAL)) {}
+    else if (match(parser, PLUS_EQUAL)) {}
+    else if (match(parser, MINUS_EQUAL)) {}
+    else if (match(parser, STAR_EQUAL)) {}
+    else if (match(parser, SLASH_EQUAL)) {}
+    else if (match(parser, PERCENT_EQUAL)) {}
     else {
-        if (parser->current_token.type == EQUAL) advance(parser);
-        else if (parser->current_token.type == PLUS && parser->next_token.type == EQUAL) { advance(parser); advance(parser); }
-        else if (parser->current_token.type == MINUS && parser->next_token.type == EQUAL) { advance(parser); advance(parser); }
-        else if (parser->current_token.type == STAR && parser->next_token.type == EQUAL) { advance(parser); advance(parser); }
-        else if (parser->current_token.type == SLASH && parser->next_token.type == EQUAL) { advance(parser); advance(parser); }
-        else error(parser, "Expect assignment operator.");
+        error(parser, "Expect assignment operator (=, +=, -=, *=, /=, %=).");
     }
     expression(parser);
     consume(parser, SEMICOLON, "Expect ';' after assignment.");
