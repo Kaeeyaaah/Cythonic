@@ -762,10 +762,16 @@ static void primary(Parser* parser) {
 }
 
 static void postfix(Parser* parser) {
-    enter_node(parser, "Postfix");
-    primary(parser);
-    while (match(parser, PLUS_PLUS) || match(parser, MINUS_MINUS)) {}
-    exit_node(parser, "Postfix");
+    enter_node(parser, "Prefix/Postfix");
+    // Handle prefix ++ and --
+    if (match(parser, PLUS_PLUS) || match(parser, MINUS_MINUS)) {
+        postfix(parser);  // Recursive call for chained prefix ops
+    } else {
+        primary(parser);
+        // Handle postfix ++ and --
+        while (match(parser, PLUS_PLUS) || match(parser, MINUS_MINUS)) {}
+    }
+    exit_node(parser, "Prefix/Postfix");
 }
 
 static void unary(Parser* parser) {
