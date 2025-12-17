@@ -1064,6 +1064,9 @@ static void enum_declaration(Parser* parser) {
     consume(parser, LEFT_BRACE, "Expect '{' before enum members.");
     while (!check(parser, RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
         consume(parser, IDENTIFIER, "Expect enum member name.");
+        if (match(parser, EQUAL)) {
+            expression(parser);
+        }
         if (match(parser, COMMA)) {} 
         else break;
     }
@@ -1208,6 +1211,11 @@ static void statement(Parser* parser) {
     else if (match(parser, STRUCT)) struct_declaration(parser);
     else if (match(parser, ENUM)) enum_declaration(parser);
     else if (match(parser, RECORD)) record_declaration(parser);
+    else if ((check(parser, PUB) || check(parser, PRIV)) && parser->next_token.type == RECORD) {
+        advance(parser); // consume modifier
+        advance(parser); // consume RECORD
+        record_declaration(parser);
+    }
     
     else if (check(parser, RESERVED_WORD) || check(parser, KEYWORD)) {
         if (strcmp(parser->current_token.lexeme, "while") == 0) { advance(parser); while_statement(parser); }
