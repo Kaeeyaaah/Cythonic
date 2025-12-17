@@ -62,12 +62,23 @@
 
 typedef enum {
     // Keywords and Types
-    KEYWORD,           // Contextual keywords (23 total)
-    RESERVED_WORD,     // Reserved words (27 total)
+    KEYWORD,           // Contextual keywords
+    RESERVED_WORD,     // Reserved words
     TYPE,              // Type keywords (5 total)
     IDENTIFIER,        // User-defined identifiers
     BOOLEAN_LITERAL,   // true, false (2 total)
     NOISE_WORD,        // at, its, then (3 total)
+
+    // New Control Flow Tokens
+    SWITCH, CASE, DEFAULT, BREAK, NEXT, DO,
+
+    // New OOP & Structure Tokens
+    CLASS, STRUCT, ENUM, RECORD,
+    PUB, PRIV, PROT, REQ,
+    GET, SET, INIT,
+
+    // New Operator Tokens
+    AS,
     
     // Literals
     NUMBER,            // Integer, float, scientific notation
@@ -145,6 +156,24 @@ const char* token_type_to_string(TokenType type) {
         case IDENTIFIER: return "IDENTIFIER";
         case BOOLEAN_LITERAL: return "BOOLEAN_LITERAL";
         case NOISE_WORD: return "NOISE_WORD";
+        case SWITCH: return "SWITCH";
+        case CASE: return "CASE";
+        case DEFAULT: return "DEFAULT";
+        case BREAK: return "BREAK";
+        case NEXT: return "NEXT";
+        case DO: return "DO";
+        case CLASS: return "CLASS";
+        case STRUCT: return "STRUCT";
+        case ENUM: return "ENUM";
+        case RECORD: return "RECORD";
+        case PUB: return "PUB";
+        case PRIV: return "PRIV";
+        case PROT: return "PROT";
+        case REQ: return "REQ";
+        case GET: return "GET";
+        case SET: return "SET";
+        case INIT: return "INIT";
+        case AS: return "AS";
         case NUMBER: return "NUMBER";
         case STRING_LITERAL: return "STRING_LITERAL";
         case CHAR_LITERAL: return "CHAR_LITERAL";
@@ -270,24 +299,46 @@ static bool trie_try_get_type(KeywordTrie* trie, int state, TokenType* out_type)
 
 static KeywordTrie* initialize_keywords() {
     KeywordTrie* trie = trie_create();
-    // Contextual Keywords (23 total) - Per PPL Project Proposal Group 8
+    // Contextual Keywords
     trie_add(trie, "and", KEYWORD); trie_add(trie, "args", KEYWORD); trie_add(trie, "async", KEYWORD);
-    trie_add(trie, "dyn", KEYWORD); trie_add(trie, "get", KEYWORD); trie_add(trie, "global", KEYWORD);
-    trie_add(trie, "init", KEYWORD); trie_add(trie, "input", KEYWORD); trie_add(trie, "let", KEYWORD);
+    trie_add(trie, "dyn", KEYWORD); trie_add(trie, "global", KEYWORD);
+    trie_add(trie, "input", KEYWORD); trie_add(trie, "let", KEYWORD);
     trie_add(trie, "nmof", KEYWORD); trie_add(trie, "nnull", KEYWORD); trie_add(trie, "or", KEYWORD);
-    trie_add(trie, "print", KEYWORD); trie_add(trie, "rec", KEYWORD); trie_add(trie, "req", KEYWORD);
-    trie_add(trie, "set", KEYWORD); trie_add(trie, "stc", KEYWORD); trie_add(trie, "str", KEYWORD);
-    trie_add(trie, "struct", KEYWORD); trie_add(trie, "switch", KEYWORD); trie_add(trie, "this", KEYWORD);
+    trie_add(trie, "print", KEYWORD); trie_add(trie, "rec", KEYWORD);
+    trie_add(trie, "stc", KEYWORD); trie_add(trie, "str", KEYWORD);
+    trie_add(trie, "this", KEYWORD);
     trie_add(trie, "val", KEYWORD); trie_add(trie, "var", KEYWORD);
-    // Reserved Words (27 total) - Per PPL Project Proposal Group 8
-    trie_add(trie, "as", RESERVED_WORD); trie_add(trie, "base", RESERVED_WORD); trie_add(trie, "break", RESERVED_WORD);
-    trie_add(trie, "case", RESERVED_WORD); trie_add(trie, "class", RESERVED_WORD); trie_add(trie, "const", RESERVED_WORD);
-    trie_add(trie, "default", RESERVED_WORD); trie_add(trie, "do", RESERVED_WORD); trie_add(trie, "else", RESERVED_WORD);
-    trie_add(trie, "enum", RESERVED_WORD); trie_add(trie, "for", RESERVED_WORD); trie_add(trie, "foreach", RESERVED_WORD);
+
+    // New Token Mappings
+    trie_add(trie, "switch", SWITCH);
+    trie_add(trie, "case", CASE);
+    trie_add(trie, "default", DEFAULT);
+    trie_add(trie, "break", BREAK);
+    trie_add(trie, "next", NEXT);
+    trie_add(trie, "do", DO);
+    trie_add(trie, "as", AS);
+    trie_add(trie, "class", CLASS);
+    trie_add(trie, "struct", STRUCT);
+    trie_add(trie, "enum", ENUM);
+    trie_add(trie, "record", RECORD);
+    trie_add(trie, "pub", PUB);
+    trie_add(trie, "priv", PRIV);
+    trie_add(trie, "prot", PROT);
+    trie_add(trie, "req", REQ);
+    trie_add(trie, "get", GET);
+    trie_add(trie, "set", SET);
+    trie_add(trie, "init", INIT);
+
+    // Reserved Words
+    trie_add(trie, "base", RESERVED_WORD);
+    trie_add(trie, "const", RESERVED_WORD);
+    trie_add(trie, "else", RESERVED_WORD);
+    trie_add(trie, "for", RESERVED_WORD); trie_add(trie, "foreach", RESERVED_WORD);
     trie_add(trie, "if", RESERVED_WORD); trie_add(trie, "iface", RESERVED_WORD); trie_add(trie, "in", RESERVED_WORD);
-    trie_add(trie, "new", RESERVED_WORD); trie_add(trie, "next", RESERVED_WORD); trie_add(trie, "nspace", RESERVED_WORD);
-    trie_add(trie, "null", RESERVED_WORD); trie_add(trie, "priv", RESERVED_WORD); trie_add(trie, "prot", RESERVED_WORD);
-    trie_add(trie, "pub", RESERVED_WORD); trie_add(trie, "rdo", RESERVED_WORD); trie_add(trie, "record", RESERVED_WORD);
+    trie_add(trie, "new", RESERVED_WORD);
+    trie_add(trie, "nspace", RESERVED_WORD);
+    trie_add(trie, "null", RESERVED_WORD);
+    trie_add(trie, "rdo", RESERVED_WORD);
     trie_add(trie, "return", RESERVED_WORD); trie_add(trie, "use", RESERVED_WORD); trie_add(trie, "while", RESERVED_WORD);
     // Types (5 total) - Per PPL Project Proposal Group 8
     trie_add(trie, "bool", TYPE); trie_add(trie, "char", TYPE); trie_add(trie, "double", TYPE);
@@ -751,6 +802,9 @@ static void primary(Parser* parser) {
     if (match(parser, CHAR_LITERAL)) { exit_node(parser, "Primary"); return; }
     if (match(parser, BOOLEAN_LITERAL)) { exit_node(parser, "Primary"); return; }
     if (match(parser, IDENTIFIER)) { exit_node(parser, "Primary"); return; }
+    // Allow contextual keywords to be used as identifiers/expressions
+    if (match(parser, KEYWORD)) { exit_node(parser, "Primary"); return; }
+    
     if (match(parser, LEFT_PAREN)) {
         expression(parser);
         consume(parser, RIGHT_PAREN, "Expect ')' after expression.");
@@ -799,11 +853,20 @@ static void term(Parser* parser) {
     exit_node(parser, "Term");
 }
 
+static void type_conversion(Parser* parser) {
+    enter_node(parser, "TypeConversion");
+    term(parser);
+    while (match(parser, AS)) {
+        consume(parser, TYPE, "Expect type after 'as'.");
+    }
+    exit_node(parser, "TypeConversion");
+}
+
 static void comparison(Parser* parser) {
     enter_node(parser, "Comparison");
-    term(parser);
+    type_conversion(parser);
     while (match(parser, GREATER) || match(parser, GREATER_EQUAL) ||
-           match(parser, LESS) || match(parser, LESS_EQUAL)) term(parser);
+           match(parser, LESS) || match(parser, LESS_EQUAL)) type_conversion(parser);
     exit_node(parser, "Comparison");
 }
 
@@ -916,6 +979,211 @@ static void for_statement(Parser* parser) {
     exit_node(parser, "ForStatement");
 }
 
+static void foreach_statement(Parser* parser) {
+    enter_node(parser, "ForeachStatement");
+    consume(parser, LEFT_PAREN, "Expect '(' after 'foreach'.");
+    
+    if (match(parser, TYPE)) {}
+    else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "str") == 0) advance(parser);
+    else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "var") == 0) advance(parser);
+    else error(parser, "Expect type or 'var' in foreach.");
+    
+    consume(parser, IDENTIFIER, "Expect variable name.");
+    
+    if (check(parser, RESERVED_WORD) && strcmp(parser->current_token.lexeme, "in") == 0) {
+        advance(parser);
+    } else {
+        error(parser, "Expect 'in' after variable.");
+    }
+    
+    expression(parser);
+    consume(parser, RIGHT_PAREN, "Expect ')' after collection.");
+    statement(parser);
+    exit_node(parser, "ForeachStatement");
+}
+
+static void switch_statement(Parser* parser) {
+    enter_node(parser, "SwitchStatement");
+    consume(parser, LEFT_PAREN, "Expect '(' after 'switch'.");
+    expression(parser);
+    consume(parser, RIGHT_PAREN, "Expect ')' after switch expression.");
+    consume(parser, LEFT_BRACE, "Expect '{' before switch cases.");
+    
+    while (!check(parser, RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+        if (match(parser, CASE)) {
+            enter_node(parser, "CaseClause");
+            expression(parser);
+            consume(parser, COLON, "Expect ':' after case expression.");
+            while (!check(parser, CASE) && !check(parser, DEFAULT) && !check(parser, RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+                statement(parser);
+            }
+            exit_node(parser, "CaseClause");
+        } else if (match(parser, DEFAULT)) {
+            enter_node(parser, "DefaultClause");
+            consume(parser, COLON, "Expect ':' after default.");
+            while (!check(parser, CASE) && !check(parser, DEFAULT) && !check(parser, RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+                statement(parser);
+            }
+            exit_node(parser, "DefaultClause");
+        } else {
+            error(parser, "Expect 'case' or 'default' inside switch.");
+            advance(parser);
+        }
+    }
+    consume(parser, RIGHT_BRACE, "Expect '}' after switch body.");
+    exit_node(parser, "SwitchStatement");
+}
+
+static void do_while_statement(Parser* parser) {
+    enter_node(parser, "DoWhileStatement");
+    consume(parser, LEFT_BRACE, "Expect '{' after 'do'.");
+    block(parser);
+    
+    if (check(parser, RESERVED_WORD) && strcmp(parser->current_token.lexeme, "while") == 0) {
+        advance(parser);
+    } else {
+        error(parser, "Expect 'while' after do-block.");
+    }
+    
+    consume(parser, LEFT_PAREN, "Expect '(' after 'while'.");
+    expression(parser);
+    consume(parser, RIGHT_PAREN, "Expect ')' after condition.");
+    consume(parser, SEMICOLON, "Expect ';' after do-while.");
+    exit_node(parser, "DoWhileStatement");
+}
+
+static void next_statement(Parser* parser) {
+    enter_node(parser, "NextStatement");
+    consume(parser, SEMICOLON, "Expect ';' after 'next'.");
+    exit_node(parser, "NextStatement");
+}
+
+static void enum_declaration(Parser* parser) {
+    enter_node(parser, "EnumDeclaration");
+    consume(parser, IDENTIFIER, "Expect enum name.");
+    consume(parser, LEFT_BRACE, "Expect '{' before enum members.");
+    while (!check(parser, RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+        consume(parser, IDENTIFIER, "Expect enum member name.");
+        if (match(parser, COMMA)) {} 
+        else break;
+    }
+    consume(parser, RIGHT_BRACE, "Expect '}' after enum members.");
+    exit_node(parser, "EnumDeclaration");
+}
+
+static void struct_declaration(Parser* parser) {
+    enter_node(parser, "StructDefinition");
+    consume(parser, IDENTIFIER, "Expect struct name.");
+    consume(parser, LEFT_BRACE, "Expect '{' before struct members.");
+    while (!check(parser, RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+        if (match(parser, TYPE)) {}
+        else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "str") == 0) advance(parser);
+        else error(parser, "Expect type in struct member.");
+        
+        consume(parser, IDENTIFIER, "Expect member name.");
+        consume(parser, SEMICOLON, "Expect ';' after member.");
+    }
+    consume(parser, RIGHT_BRACE, "Expect '}' after struct members.");
+    exit_node(parser, "StructDefinition");
+}
+
+static void record_declaration(Parser* parser) {
+    enter_node(parser, "RecordDeclaration");
+    consume(parser, IDENTIFIER, "Expect record name.");
+    consume(parser, LEFT_BRACE, "Expect '{' before record members.");
+    while (!check(parser, RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+        if (match(parser, REQ)) {}
+        
+        if (match(parser, TYPE)) {}
+        else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "str") == 0) advance(parser);
+        else error(parser, "Expect type in record member.");
+        
+        consume(parser, IDENTIFIER, "Expect member name.");
+        
+        if (match(parser, EQUAL)) {
+            expression(parser);
+        }
+        
+        consume(parser, SEMICOLON, "Expect ';' after member.");
+    }
+    consume(parser, RIGHT_BRACE, "Expect '}' after record members.");
+    exit_node(parser, "RecordDeclaration");
+}
+
+static void class_declaration(Parser* parser) {
+    enter_node(parser, "ClassDeclaration");
+    consume(parser, IDENTIFIER, "Expect class name.");
+    consume(parser, LEFT_BRACE, "Expect '{' before class body.");
+    while (!check(parser, RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+        if (match(parser, PUB) || match(parser, PRIV) || match(parser, PROT)) {}
+        
+        // Handle optional 'rdo'
+        if (check(parser, RESERVED_WORD) && strcmp(parser->current_token.lexeme, "rdo") == 0) {
+            advance(parser);
+        }
+
+        if (match(parser, TYPE)) {}
+        else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "str") == 0) advance(parser);
+        else error(parser, "Expect type or void in class member.");
+        
+        consume(parser, IDENTIFIER, "Expect member name.");
+        
+        if (match(parser, LEFT_PAREN)) {
+            enter_node(parser, "MethodDeclaration");
+            if (!check(parser, RIGHT_PAREN)) {
+                do {
+                    if (match(parser, TYPE)) {}
+                    else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "str") == 0) advance(parser);
+                    
+                    // Allow IDENTIFIER or KEYWORD (contextual) as argument name
+                    if (check(parser, IDENTIFIER) || check(parser, KEYWORD)) {
+                        advance(parser);
+                    } else {
+                        error(parser, "Expect argument name.");
+                    }
+                } while (match(parser, COMMA));
+            }
+            consume(parser, RIGHT_PAREN, "Expect ')' after arguments.");
+            consume(parser, LEFT_BRACE, "Expect '{' before method body.");
+            block(parser);
+            exit_node(parser, "MethodDeclaration");
+        } else if (match(parser, LEFT_BRACE)) {
+            enter_node(parser, "PropertyDeclaration");
+            while (!check(parser, RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+                if (match(parser, GET) || match(parser, SET) || match(parser, INIT)) {
+                    // Accessor body: { ... } or ;
+                    if (match(parser, LEFT_BRACE)) {
+                        // { return expr; } or { expr; }
+                        // For simplicity, just parse as block or statement
+                        // The doc says: "get" "{" "return" <Expression> ";" "}"
+                        // or "set" "{" <Expression> ";" "}"
+                        // Let's just use block() or statement() loop until }
+                        while (!check(parser, RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+                            statement(parser);
+                        }
+                        consume(parser, RIGHT_BRACE, "Expect '}' after accessor body.");
+                    } else {
+                        consume(parser, SEMICOLON, "Expect ';' after accessor (auto-implemented).");
+                    }
+                } else {
+                    error(parser, "Expect get, set, or init.");
+                    advance(parser);
+                }
+            }
+            consume(parser, RIGHT_BRACE, "Expect '}' after property body.");
+            exit_node(parser, "PropertyDeclaration");
+        } else {
+            // Field Declaration
+            if (match(parser, EQUAL)) {
+                expression(parser);
+            }
+            consume(parser, SEMICOLON, "Expect ';' after field.");
+        }
+    }
+    consume(parser, RIGHT_BRACE, "Expect '}' after class body.");
+    exit_node(parser, "ClassDeclaration");
+}
+
 static void statement(Parser* parser) {
     enter_node(parser, "Statement");
     // Handle prefix increment/decrement statements
@@ -931,9 +1199,20 @@ static void statement(Parser* parser) {
         advance(parser);
         declaration_statement(parser);
     }
+    // New Control Flow & Declarations
+    else if (match(parser, SWITCH)) switch_statement(parser);
+    else if (match(parser, DO)) do_while_statement(parser);
+    else if (match(parser, NEXT)) next_statement(parser);
+    else if (match(parser, BREAK)) { consume(parser, SEMICOLON, "Expect ';' after break."); }
+    else if (match(parser, CLASS)) class_declaration(parser);
+    else if (match(parser, STRUCT)) struct_declaration(parser);
+    else if (match(parser, ENUM)) enum_declaration(parser);
+    else if (match(parser, RECORD)) record_declaration(parser);
+    
     else if (check(parser, RESERVED_WORD) || check(parser, KEYWORD)) {
         if (strcmp(parser->current_token.lexeme, "while") == 0) { advance(parser); while_statement(parser); }
         else if (strcmp(parser->current_token.lexeme, "for") == 0) { advance(parser); for_statement(parser); }
+        else if (strcmp(parser->current_token.lexeme, "foreach") == 0) { advance(parser); foreach_statement(parser); }
         else if (strcmp(parser->current_token.lexeme, "if") == 0) {
             enter_node(parser, "IfStatement");
             advance(parser);
@@ -960,12 +1239,35 @@ static void statement(Parser* parser) {
         } else if (strcmp(parser->current_token.lexeme, "print") == 0) {
             advance(parser);
             output_statement(parser);
+        } else if (strcmp(parser->current_token.lexeme, "let") == 0) {
+            enter_node(parser, "LetStatement");
+            advance(parser);
+            consume(parser, IDENTIFIER, "Expect variable name after 'let'.");
+            consume(parser, EQUAL, "Expect '=' after variable name.");
+            expression(parser);
+            consume(parser, SEMICOLON, "Expect ';' after let statement.");
+            exit_node(parser, "LetStatement");
+        } else if (strcmp(parser->current_token.lexeme, "set") == 0) {
+            enter_node(parser, "SetStatement");
+            advance(parser);
+            consume(parser, IDENTIFIER, "Expect variable name after 'set'.");
+            consume(parser, EQUAL, "Expect '=' after variable name.");
+            expression(parser);
+            consume(parser, SEMICOLON, "Expect ';' after set statement.");
+            exit_node(parser, "SetStatement");
         } else if (strcmp(parser->current_token.lexeme, "var") == 0 || 
                    strcmp(parser->current_token.lexeme, "const") == 0 ||
                    strcmp(parser->current_token.lexeme, "dyn") == 0) {
             advance(parser);
             declaration_statement(parser);
         } else {
+            // If we hit a keyword that isn't a statement starter, it's likely an error or used as an identifier
+            // But if it was used as an identifier, it should have been caught by the IDENTIFIER check?
+            // No, KEYWORD tokens are separate.
+            // If we are here, we have a KEYWORD/RESERVED_WORD that is NOT one of the above.
+            // e.g. 'class' is handled above.
+            // If it's something like 'and', 'or', etc. appearing as a statement start, it's invalid.
+            error(parser, "Unexpected keyword at start of statement.");
             advance(parser);
         }
     } else if (match(parser, LEFT_BRACE)) {
