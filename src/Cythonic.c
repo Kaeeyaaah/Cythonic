@@ -918,8 +918,15 @@ static void for_statement(Parser* parser) {
 
 static void statement(Parser* parser) {
     enter_node(parser, "Statement");
+    // Handle prefix increment/decrement statements
+    if (match(parser, PLUS_PLUS) || match(parser, MINUS_MINUS)) {
+        enter_node(parser, "IncrementStatement");
+        consume(parser, IDENTIFIER, "Expect identifier after prefix operator.");
+        consume(parser, SEMICOLON, "Expect ';' after increment/decrement.");
+        exit_node(parser, "IncrementStatement");
+    }
     // Handle type declarations (TYPE tokens or 'str' KEYWORD)
-    if (match(parser, TYPE)) declaration_statement(parser);
+    else if (match(parser, TYPE)) declaration_statement(parser);
     else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "str") == 0) {
         advance(parser);
         declaration_statement(parser);
