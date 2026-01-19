@@ -38,15 +38,14 @@ This compiler demonstrates all core concepts of compiler construction:
 
 ### Build the Compiler
 ```bash
-cd src
-gcc Cythonic.c -o cythonic.exe -Wall -Wextra -std=c11    # Windows
+gcc ./src/Cythonic.c -o cythonic.exe    # Windows
 # OR
-gcc Cythonic.c -o cythonic -Wall -Wextra -std=c11        # Linux/Mac
+gcc ./src/Cythonic.c -o cythonic       # Linux/Mac
 ```
 
 ### Run Sample Program
 ```bash
-./cythonic ../samples/sample.cytho
+./src/cythonic.exe ./samples/sample.cytho
 ```
 
 ### Expected Output

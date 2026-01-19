@@ -221,6 +221,184 @@ const char* token_type_to_string(TokenType type) {
     }
 }
 
+static TokenType token_type_from_string(const char* str) {
+    if (strcmp(str, "KEYWORD") == 0) return KEYWORD;
+    if (strcmp(str, "RESERVED_WORD") == 0) return RESERVED_WORD;
+    if (strcmp(str, "TYPE") == 0) return TYPE;
+    if (strcmp(str, "IDENTIFIER") == 0) return IDENTIFIER;
+    if (strcmp(str, "BOOLEAN_LITERAL") == 0) return BOOLEAN_LITERAL;
+    if (strcmp(str, "NOISE_WORD") == 0) return NOISE_WORD;
+    if (strcmp(str, "SWITCH") == 0) return SWITCH;
+    if (strcmp(str, "CASE") == 0) return CASE;
+    if (strcmp(str, "DEFAULT") == 0) return DEFAULT;
+    if (strcmp(str, "BREAK") == 0) return BREAK;
+    if (strcmp(str, "NEXT") == 0) return NEXT;
+    if (strcmp(str, "DO") == 0) return DO;
+    if (strcmp(str, "CLASS") == 0) return CLASS;
+    if (strcmp(str, "STRUCT") == 0) return STRUCT;
+    if (strcmp(str, "ENUM") == 0) return ENUM;
+    if (strcmp(str, "RECORD") == 0) return RECORD;
+    if (strcmp(str, "PUB") == 0) return PUB;
+    if (strcmp(str, "PRIV") == 0) return PRIV;
+    if (strcmp(str, "PROT") == 0) return PROT;
+    if (strcmp(str, "REQ") == 0) return REQ;
+    if (strcmp(str, "GET") == 0) return GET;
+    if (strcmp(str, "SET") == 0) return SET;
+    if (strcmp(str, "INIT") == 0) return INIT;
+    if (strcmp(str, "AS") == 0) return AS;
+    if (strcmp(str, "NUMBER") == 0) return NUMBER;
+    if (strcmp(str, "STRING_LITERAL") == 0) return STRING_LITERAL;
+    if (strcmp(str, "CHAR_LITERAL") == 0) return CHAR_LITERAL;
+    if (strcmp(str, "PLUS") == 0) return PLUS;
+    if (strcmp(str, "MINUS") == 0) return MINUS;
+    if (strcmp(str, "STAR") == 0) return STAR;
+    if (strcmp(str, "SLASH") == 0) return SLASH;
+    if (strcmp(str, "PERCENT") == 0) return PERCENT;
+    if (strcmp(str, "PLUS_PLUS") == 0) return PLUS_PLUS;
+    if (strcmp(str, "MINUS_MINUS") == 0) return MINUS_MINUS;
+    if (strcmp(str, "EQUAL") == 0) return EQUAL;
+    if (strcmp(str, "PLUS_EQUAL") == 0) return PLUS_EQUAL;
+    if (strcmp(str, "MINUS_EQUAL") == 0) return MINUS_EQUAL;
+    if (strcmp(str, "STAR_EQUAL") == 0) return STAR_EQUAL;
+    if (strcmp(str, "SLASH_EQUAL") == 0) return SLASH_EQUAL;
+    if (strcmp(str, "PERCENT_EQUAL") == 0) return PERCENT_EQUAL;
+    if (strcmp(str, "EQUAL_EQUAL") == 0) return EQUAL_EQUAL;
+    if (strcmp(str, "NOT_EQUAL") == 0) return NOT_EQUAL;
+    if (strcmp(str, "GREATER") == 0) return GREATER;
+    if (strcmp(str, "LESS") == 0) return LESS;
+    if (strcmp(str, "GREATER_EQUAL") == 0) return GREATER_EQUAL;
+    if (strcmp(str, "LESS_EQUAL") == 0) return LESS_EQUAL;
+    if (strcmp(str, "AND_AND") == 0) return AND_AND;
+    if (strcmp(str, "OR_OR") == 0) return OR_OR;
+    if (strcmp(str, "NOT") == 0) return NOT;
+    if (strcmp(str, "AND") == 0) return AND;
+    if (strcmp(str, "OR") == 0) return OR;
+    if (strcmp(str, "XOR") == 0) return XOR;
+    if (strcmp(str, "TILDE") == 0) return TILDE;
+    if (strcmp(str, "LEFT_PAREN") == 0) return LEFT_PAREN;
+    if (strcmp(str, "RIGHT_PAREN") == 0) return RIGHT_PAREN;
+    if (strcmp(str, "LEFT_BRACE") == 0) return LEFT_BRACE;
+    if (strcmp(str, "RIGHT_BRACE") == 0) return RIGHT_BRACE;
+    if (strcmp(str, "LEFT_BRACKET") == 0) return LEFT_BRACKET;
+    if (strcmp(str, "RIGHT_BRACKET") == 0) return RIGHT_BRACKET;
+    if (strcmp(str, "SEMICOLON") == 0) return SEMICOLON;
+    if (strcmp(str, "COMMA") == 0) return COMMA;
+    if (strcmp(str, "DOT") == 0) return DOT;
+    if (strcmp(str, "COLON") == 0) return COLON;
+    if (strcmp(str, "QUESTION") == 0) return QUESTION;
+    if (strcmp(str, "COMMENT") == 0) return COMMENT;
+    if (strcmp(str, "EOF") == 0) return TOKEN_EOF;
+    return INVALID;
+}
+
+/* ============================================================================
+ * SYMBOL TABLE INPUT READER
+ * ============================================================================ */
+
+static Token create_token(TokenType type, const char* lexeme, const char* raw, int line, int col);
+
+typedef struct {
+    Token* tokens;
+    int count;
+    int capacity;
+} TokenList;
+
+static void token_list_add(TokenList* list, Token token) {
+    if (list->count >= list->capacity) {
+        list->capacity = list->capacity < 8 ? 8 : list->capacity * 2;
+        list->tokens = realloc(list->tokens, list->capacity * sizeof(Token));
+    }
+    list->tokens[list->count++] = token;
+}
+
+static void unescape_string(const char* src, char* dest) {
+    int i = 0, j = 0;
+    while (src[i]) {
+        if (src[i] == '\\' && src[i+1]) {
+            i++;
+            switch(src[i]) {
+                case 'n': dest[j++] = '\n'; break;
+                case 'r': dest[j++] = '\r'; break;
+                case 't': dest[j++] = '\t'; break;
+                default: dest[j++] = src[i]; break;
+            }
+        } else {
+            dest[j++] = src[i];
+        }
+        i++;
+    }
+    dest[j] = '\0';
+}
+
+static TokenList read_tokens_from_symbol_table(const char* path) {
+    TokenList list = {0};
+    list.tokens = NULL;
+    list.count = 0;
+    list.capacity = 0;
+    
+    FILE* file = fopen(path, "r");
+    if (!file) {
+        printf("Error: Could not open symbol table file '%s'\n", path);
+        return list;
+    }
+
+    char line[2048];
+    for(int i=0; i<4; i++) { if(!fgets(line, sizeof(line), file)) break; } // Skip header
+
+    while (fgets(line, sizeof(line), file)) {
+        if (strncmp(line, "Total tokens:", 13) == 0) break;
+        if (strncmp(line, "END OF SYMBOL TABLE", 19) == 0) break;
+        
+        char* p1 = strchr(line, '|');
+        char* p2 = p1 ? strchr(p1+1, '|') : NULL;
+        char* p3 = p2 ? strchr(p2+1, '|') : NULL;
+        char* p4 = p3 ? strchr(p3+1, '|') : NULL;
+        
+        if (!p1 || !p2 || !p3 || !p4) continue;
+        
+        *p1 = 0; *p2 = 0; *p3 = 0; *p4 = 0;
+        
+        int line_num = atoi(line);
+        int col = atoi(p1 + 1);
+        
+        char type_str[64];
+        char lexeme_str[512];
+        char raw_str[1024];
+
+        strncpy(type_str, p2 + 1, sizeof(type_str)-1); type_str[sizeof(type_str)-1] = 0;
+        char* t = type_str; while(*t == ' ') t++;
+        char* e = t + strlen(t) - 1; while(e >= t && (*e == ' ' || *e == '\n')) *e-- = 0;
+        memmove(type_str, t, strlen(t) + 1);
+
+        strncpy(lexeme_str, p3 + 1, sizeof(lexeme_str)-1); lexeme_str[sizeof(lexeme_str)-1] = 0;
+        t = lexeme_str; while(*t == ' ') t++;
+        e = t + strlen(t) - 1; while(e >= t && *e == ' ') *e-- = 0; 
+        memmove(lexeme_str, t, strlen(t) + 1);
+
+        strncpy(raw_str, p4 + 1, sizeof(raw_str)-1); raw_str[sizeof(raw_str)-1] = 0;
+        t = raw_str; while(*t == ' ') t++;
+        e = t + strlen(t) - 1; while(e >= t && (*e == ' ' || *e == '\n')) *e-- = 0;
+        memmove(raw_str, t, strlen(t) + 1);
+        
+        TokenType type = token_type_from_string(type_str);
+        
+        if (type != COMMENT) { // FILTER COMMENTS from Parser Input
+             char* final_lexeme = malloc(strlen(lexeme_str) + 1);
+             unescape_string(lexeme_str, final_lexeme);
+             
+             char* final_raw = malloc(strlen(raw_str) + 1);
+             unescape_string(raw_str, final_raw);
+
+             Token token = create_token(type, final_lexeme, final_raw, line_num, col);
+             free(final_lexeme);
+             free(final_raw); // create_token duplicates them
+             token_list_add(&list, token);
+        }
+    }
+    fclose(file);
+    return list;
+}
+
 /* ============================================================================
  * LEXER IMPLEMENTATION
  * ============================================================================ */
@@ -653,11 +831,141 @@ Token lexer_next_token(Lexer* lexer) {
 }
 
 /* ============================================================================
+ * INTERPRETER / EVALUATOR DEFINITIONS
+ * ============================================================================ */
+
+typedef enum { VAL_INT, VAL_DOUBLE, VAL_BOOL, VAL_STRING, VAL_CHAR, VAL_VOID, VAL_NULL } ValueType;
+
+typedef struct {
+    ValueType type;
+    union {
+        int int_val;
+        double double_val;
+        bool bool_val;
+        char* string_val;
+        char char_val;
+    } as;
+} Value;
+
+typedef struct Env {
+    char* name;
+    Value value;
+    bool is_const;
+    struct Env* next;
+} Env;
+
+static Value make_int(int v) { Value val; val.type = VAL_INT; val.as.int_val = v; return val; }
+static Value make_double(double v) { Value val; val.type = VAL_DOUBLE; val.as.double_val = v; return val; }
+static Value make_bool(bool v) { Value val; val.type = VAL_BOOL; val.as.bool_val = v; return val; }
+static Value make_string(const char* v) { 
+    Value val; val.type = VAL_STRING; 
+    val.as.string_val = malloc(strlen(v) + 1); 
+    strcpy(val.as.string_val, v); 
+    return val; 
+}
+static Value make_char(char v) { Value val; val.type = VAL_CHAR; val.as.char_val = v; return val; }
+static Value make_void() { Value val; val.type = VAL_VOID; return val; }
+static Value make_null() { Value val; val.type = VAL_NULL; return val; }
+
+static void free_value(Value v) {
+    if (v.type == VAL_STRING && v.as.string_val) free(v.as.string_val);
+}
+
+static Env* env_create() { return NULL; }
+
+static void env_define(Env** env, const char* name, Value value, bool is_const) {
+    Env* start = *env;
+    // Check if exists
+    Env* current = start;
+    while (current) {
+        if (strcmp(current->name, name) == 0) {
+            free_value(current->value);
+            current->value = value; // Overwrite definition (allows shadowing logic or re-use in simple scope)
+            current->is_const = is_const;
+            return;
+        }
+        current = current->next;
+    }
+    // New
+    Env* node = malloc(sizeof(Env));
+    node->name = strdup(name);
+    node->value = value; // Takes ownership (shallow copy of struct, string ptr copied)
+    // Note: for strings, we need to handle ownership carefully. 
+    // Here we assume value's string dict is owned by Env. 
+    // When passing Value around, we might need deep copies for strings.
+    // For simplicity: `make_string` allocs. `env_define` takes it.
+    node->is_const = is_const;
+    node->next = *env;
+    *env = node;
+}
+
+static bool env_assign(Env* env, const char* name, Value value) {
+    while (env) {
+        if (strcmp(env->name, name) == 0) {
+            if (env->is_const) return false;
+            // Free old string if necessary
+            if (env->value.type == VAL_STRING) free(env->value.as.string_val);
+            env->value = value;
+            return true;
+        }
+        env = env->next;
+    }
+    return false;
+}
+
+static bool env_get(Env* env, const char* name, Value* out) {
+    while (env) {
+        if (strcmp(env->name, name) == 0) { // Simple linear search linear scope
+             // Deep copy value for usage
+             *out = env->value;
+             if (out->type == VAL_STRING) out->as.string_val = strdup(env->value.as.string_val);
+             return true;
+        }
+        env = env->next;
+    }
+    return false;
+}
+
+static Value val_add(Value a, Value b) {
+    if(a.type == VAL_INT && b.type == VAL_INT) return make_int(a.as.int_val + b.as.int_val);
+    if(a.type == VAL_DOUBLE || b.type == VAL_DOUBLE) {
+        double d1 = (a.type == VAL_INT) ? (double)a.as.int_val : a.as.double_val;
+        double d2 = (b.type == VAL_INT) ? (double)b.as.int_val : b.as.double_val;
+        return make_double(d1 + d2);
+    }
+    if(a.type == VAL_STRING) {
+        // Concat
+        // TODO: Handle string concat
+    }
+    return make_int(0); 
+}
+static Value val_sub(Value a, Value b) {
+    double d1 = (a.type == VAL_INT) ? (double)a.as.int_val : a.as.double_val;
+    double d2 = (b.type == VAL_INT) ? (double)b.as.int_val : b.as.double_val;
+    if(a.type == VAL_INT && b.type == VAL_INT) return make_int(a.as.int_val - b.as.int_val);
+    return make_double(d1 - d2);
+}
+static Value val_mul(Value a, Value b) {
+    double d1 = (a.type == VAL_INT) ? (double)a.as.int_val : a.as.double_val;
+    double d2 = (b.type == VAL_INT) ? (double)b.as.int_val : b.as.double_val;
+    if(a.type == VAL_INT && b.type == VAL_INT) return make_int(a.as.int_val * b.as.int_val);
+    return make_double(d1 * d2);
+}
+static Value val_div(Value a, Value b) {
+    double d1 = (a.type == VAL_INT) ? (double)a.as.int_val : a.as.double_val;
+    double d2 = (b.type == VAL_INT) ? (double)b.as.int_val : b.as.double_val;
+    if(d2 == 0) return make_int(0); // Error
+    if(a.type == VAL_INT && b.type == VAL_INT) return make_int(a.as.int_val / b.as.int_val);
+    return make_double(d1 / d2);
+}
+
+/* ============================================================================
  * PARSER IMPLEMENTATION
  * ============================================================================ */
 
 typedef struct {
-    Lexer* lexer;
+    TokenList* token_list;
+    int current_index;
     Token current_token;
     Token next_token;
     Token previous_token;
@@ -666,19 +974,25 @@ typedef struct {
     bool panic_mode;
     int indent_level;
     FILE* output_file;
+    
+    // Evaluator
+    Env* env;
+    bool executing;
+    bool trace_parse; // If true, write to output_file
+    char last_id[64];
 } Parser;
 
 static void advance(Parser* parser);
 static void statement(Parser* parser);
-static void expression(Parser* parser);
+static Value expression(Parser* parser);
 
 static void print_indent(Parser* parser) {
-    if (!parser->output_file) return;
+    if (!parser->output_file || !parser->trace_parse) return;
     for (int i = 0; i < parser->indent_level; i++) fprintf(parser->output_file, "  ");
 }
 
 static void enter_node(Parser* parser, const char* name) {
-    if (!parser->output_file) return;
+    if (!parser->output_file || !parser->trace_parse) return;
     print_indent(parser);
     fprintf(parser->output_file, "Enter <%s>\n", name);
     parser->indent_level++;
@@ -686,27 +1000,28 @@ static void enter_node(Parser* parser, const char* name) {
 
 static void exit_node(Parser* parser, const char* name) {
     parser->indent_level--;
-    if (!parser->output_file) return;
+    if (!parser->output_file || !parser->trace_parse) return;
     print_indent(parser);
     fprintf(parser->output_file, "Exit <%s>\n", name);
 }
 
 static void print_next_token(Parser* parser) {
-    if (!parser->output_file) return;
-    print_indent(parser);
-    fprintf(parser->output_file, "Next token is: %s Next lexeme is %s\n", 
-            token_type_to_string(parser->current_token.type), 
-            parser->current_token.lexeme);
+
 }
 
-Parser* parser_create(Lexer* lexer) {
+Parser* parser_create(TokenList* token_list) {
     Parser* parser = malloc(sizeof(Parser));
-    parser->lexer = lexer;
+    parser->token_list = token_list;
+    parser->current_index = 0;
     parser->had_error = false;
     parser->panic_mode = false;
     parser->indent_level = 0;
     parser->output_file = NULL;
     
+    parser->env = NULL;
+    parser->executing = true;
+    parser->trace_parse = true;
+
     parser->current_token.type = INVALID;
     parser->current_token.lexeme = NULL;
     parser->current_token.raw = NULL;
@@ -716,7 +1031,11 @@ Parser* parser_create(Lexer* lexer) {
     parser->previous_token.raw = NULL;
     
     // Prime the pump
-    parser->next_token = lexer_next_token(parser->lexer);
+    if (parser->token_list->count > 0) {
+        parser->next_token = parser->token_list->tokens[parser->current_index++];
+    } else {
+        parser->next_token = create_token(TOKEN_EOF, "", "", 0, 0);
+    }
     parser->has_next_token = true;
     
     advance(parser);
@@ -738,19 +1057,29 @@ static void error(Parser* parser, const char* message) {
 }
 
 static void advance(Parser* parser) {
-    if (parser->previous_token.lexeme) free(parser->previous_token.lexeme);
-    if (parser->previous_token.raw) free(parser->previous_token.raw);
+    // Note: We do not free lexemes here because they are owned by TokenList
     
     parser->previous_token = parser->current_token;
     parser->current_token = parser->next_token;
     
     if (parser->current_token.type != TOKEN_EOF) {
-        parser->next_token = lexer_next_token(parser->lexer);
+        if (parser->current_index < parser->token_list->count) {
+            parser->next_token = parser->token_list->tokens[parser->current_index++];
+        } else {
+             // Create a dummy EOF token if we run out
+            parser->next_token = create_token(TOKEN_EOF, "", "", 0, 0);
+        }
     } else {
-        parser->next_token = create_token(TOKEN_EOF, "", "", parser->lexer->line, parser->lexer->column);
+        // Keep returning EOF
+        parser->next_token = create_token(TOKEN_EOF, "", "", 0, 0);
     }
     
-    print_next_token(parser);
+    if (parser->output_file && parser->trace_parse) {
+        print_indent(parser);
+        fprintf(parser->output_file, "Next token is: %s Next lexeme is %s\n", 
+            token_type_to_string(parser->current_token.type), 
+            parser->current_token.lexeme ? parser->current_token.lexeme : "");
+    }
 }
 
 static bool check(Parser* parser, TokenType type) { return parser->current_token.type == type; }
@@ -795,137 +1124,286 @@ static void block(Parser* parser) {
     exit_node(parser, "Block");
 }
 
-static void primary(Parser* parser) {
+static Value primary(Parser* parser) {
     enter_node(parser, "Primary");
-    if (match(parser, NUMBER)) { exit_node(parser, "Primary"); return; }
-    if (match(parser, STRING_LITERAL)) { exit_node(parser, "Primary"); return; }
-    if (match(parser, CHAR_LITERAL)) { exit_node(parser, "Primary"); return; }
-    if (match(parser, BOOLEAN_LITERAL)) { exit_node(parser, "Primary"); return; }
-    if (match(parser, IDENTIFIER)) { exit_node(parser, "Primary"); return; }
-    // Allow contextual keywords to be used as identifiers/expressions
-    if (match(parser, KEYWORD)) { exit_node(parser, "Primary"); return; }
+    if (match(parser, NUMBER)) { 
+        Value v;
+        if (strchr(parser->previous_token.lexeme, '.') || strchr(parser->previous_token.lexeme, 'e')) 
+             v = make_double(atof(parser->previous_token.lexeme));
+        else v = make_int(atoi(parser->previous_token.lexeme));
+        exit_node(parser, "Primary"); return v; 
+    }
+    if (match(parser, STRING_LITERAL)) { 
+        Value v = make_string(parser->previous_token.lexeme);
+        exit_node(parser, "Primary"); return v; 
+    }
+    if (match(parser, CHAR_LITERAL)) { 
+        Value v = make_char(parser->previous_token.lexeme[0]);
+        exit_node(parser, "Primary"); return v; 
+    }
+    if (match(parser, BOOLEAN_LITERAL)) { 
+        Value v = make_bool(strcmp(parser->previous_token.lexeme, "true") == 0);
+        exit_node(parser, "Primary"); return v; 
+    }
+    if (match(parser, IDENTIFIER)) {
+        strncpy(parser->last_id, parser->previous_token.lexeme, 63);
+        Value v = make_int(0);
+        if (parser->executing) {
+            if(!env_get(parser->env, parser->previous_token.lexeme, &v)) {
+                // Default 0
+            }
+        }
+        exit_node(parser, "Primary"); return v;
+    }
+    if (match(parser, KEYWORD)) {
+        strncpy(parser->last_id, parser->previous_token.lexeme, 63);
+        Value v = make_int(0);
+        if (parser->executing) env_get(parser->env, parser->previous_token.lexeme, &v); 
+        exit_node(parser, "Primary"); return v; 
+    }
     
     if (match(parser, LEFT_PAREN)) {
-        expression(parser);
+        Value v = expression(parser);
         consume(parser, RIGHT_PAREN, "Expect ')' after expression.");
         exit_node(parser, "Primary");
-        return;
+        return v;
     }
     error(parser, "Expect expression.");
     exit_node(parser, "Primary");
+    return make_null();
 }
 
-static void postfix(Parser* parser) {
+static Value postfix(Parser* parser) {
     enter_node(parser, "Prefix/Postfix");
-    // Handle prefix ++ and --
-    if (match(parser, PLUS_PLUS) || match(parser, MINUS_MINUS)) {
-        postfix(parser);  // Recursive call for chained prefix ops
+    Value v = make_null();
+    if (match(parser, PLUS_PLUS)) {
+        v = postfix(parser);
+        if (parser->executing) {
+            v = val_add(v, make_int(1));
+            env_assign(parser->env, parser->last_id, v); 
+        }
+    } else if (match(parser, MINUS_MINUS)) {
+        v = postfix(parser);
+        if (parser->executing) {
+            v = val_sub(v, make_int(1));
+            env_assign(parser->env, parser->last_id, v);
+        }
     } else {
-        primary(parser);
-        // Handle postfix ++ and --
-        while (match(parser, PLUS_PLUS) || match(parser, MINUS_MINUS)) {}
+        v = primary(parser);
+        while (check(parser, PLUS_PLUS) || check(parser, MINUS_MINUS)) {
+            bool inc = check(parser, PLUS_PLUS);
+            advance(parser);
+            if (parser->executing) {
+                Value old = v;
+                Value new_val = inc ? val_add(v, make_int(1)) : val_sub(v, make_int(1));
+                env_assign(parser->env, parser->last_id, new_val);
+                v = old; 
+            }
+        }
     }
     exit_node(parser, "Prefix/Postfix");
+    return v;
 }
 
-static void unary(Parser* parser) {
+static Value unary(Parser* parser) {
     enter_node(parser, "Unary");
-    if (match(parser, NOT) || match(parser, MINUS)) {
-        unary(parser);
+    if (match(parser, NOT)) {
+        Value v = unary(parser);
+        if(parser->executing && v.type == VAL_BOOL) v.as.bool_val = !v.as.bool_val;
         exit_node(parser, "Unary");
-        return;
+        return v;
     }
-    postfix(parser);
+    if (match(parser, MINUS)) {
+        Value v = unary(parser);
+        if(parser->executing) {
+             if (v.type == VAL_INT) v.as.int_val = -v.as.int_val;
+             else if (v.type == VAL_DOUBLE) v.as.double_val = -v.as.double_val;
+        }
+        exit_node(parser, "Unary");
+        return v;
+    }
+    Value v = postfix(parser);
     exit_node(parser, "Unary");
+    return v;
 }
 
-static void factor(Parser* parser) {
+static Value factor(Parser* parser) {
     enter_node(parser, "Factor");
-    unary(parser);
-    while (match(parser, SLASH) || match(parser, STAR) || match(parser, PERCENT)) unary(parser);
+    Value lhs = unary(parser);
+    while (check(parser, SLASH) || check(parser, STAR) || check(parser, PERCENT)) {
+        TokenType op = parser->current_token.type;
+        advance(parser);
+        Value rhs = unary(parser);
+        if(parser->executing) {
+            if(op == PLUS) lhs = val_add(lhs, rhs); 
+            if(op == STAR) lhs = val_mul(lhs, rhs);
+            if(op == SLASH) lhs = val_div(lhs, rhs);
+            if(op == PERCENT) {
+                 if (lhs.type == VAL_INT && rhs.type == VAL_INT) lhs = make_int(lhs.as.int_val % rhs.as.int_val);
+            }
+        }
+    }
     exit_node(parser, "Factor");
+    return lhs;
 }
 
-static void term(Parser* parser) {
+static Value term(Parser* parser) {
     enter_node(parser, "Term");
-    factor(parser);
-    while (match(parser, MINUS) || match(parser, PLUS)) factor(parser);
+    Value lhs = factor(parser);
+    while (check(parser, MINUS) || check(parser, PLUS)) {
+        TokenType op = parser->current_token.type;
+        advance(parser);
+        Value rhs = factor(parser);
+        if(parser->executing) {
+            if(op == PLUS) lhs = val_add(lhs, rhs);
+            if(op == MINUS) lhs = val_sub(lhs, rhs);
+        }
+    }
     exit_node(parser, "Term");
+    return lhs;
 }
 
-static void type_conversion(Parser* parser) {
+static Value type_conversion(Parser* parser) {
     enter_node(parser, "TypeConversion");
-    term(parser);
+    Value v = term(parser);
     while (match(parser, AS)) {
         consume(parser, TYPE, "Expect type after 'as'.");
+        // Implementation of cast? For now skip.
     }
     exit_node(parser, "TypeConversion");
+    return v;
 }
 
-static void comparison(Parser* parser) {
+static Value comparison(Parser* parser) {
     enter_node(parser, "Comparison");
-    type_conversion(parser);
-    while (match(parser, GREATER) || match(parser, GREATER_EQUAL) ||
-           match(parser, LESS) || match(parser, LESS_EQUAL)) type_conversion(parser);
+    Value lhs = type_conversion(parser);
+    while (check(parser, GREATER) || check(parser, GREATER_EQUAL) ||
+           check(parser, LESS) || check(parser, LESS_EQUAL)) {
+        TokenType op = parser->current_token.type;
+        advance(parser);
+        Value rhs = type_conversion(parser);
+        if (parser->executing) {
+             bool res = false;
+             // Naive comparison (assume int for simplicity or double)
+             double d1 = (lhs.type == VAL_INT) ? lhs.as.int_val : lhs.as.double_val;
+             double d2 = (rhs.type == VAL_INT) ? rhs.as.int_val : rhs.as.double_val;
+             if (op == GREATER) res = d1 > d2;
+             if (op == GREATER_EQUAL) res = d1 >= d2;
+             if (op == LESS) res = d1 < d2;
+             if (op == LESS_EQUAL) res = d1 <= d2;
+             lhs = make_bool(res);
+        }
+    }
     exit_node(parser, "Comparison");
+    return lhs;
 }
 
-static void equality(Parser* parser) {
+static Value equality(Parser* parser) {
     enter_node(parser, "Equality");
-    comparison(parser);
-    while (match(parser, NOT_EQUAL) || match(parser, EQUAL_EQUAL)) comparison(parser);
+    Value lhs = comparison(parser);
+    while (check(parser, NOT_EQUAL) || check(parser, EQUAL_EQUAL)) {
+        TokenType op = parser->current_token.type;
+        advance(parser);
+        Value rhs = comparison(parser);
+        if (parser->executing) {
+             bool res = false;
+             if (lhs.type == VAL_INT && rhs.type == VAL_INT) {
+                 res = (lhs.as.int_val == rhs.as.int_val);
+             } else if (lhs.type == VAL_BOOL && rhs.type == VAL_BOOL) {
+                 res = (lhs.as.bool_val == rhs.as.bool_val);
+             } else {
+                 double d1 = (lhs.type == VAL_INT) ? lhs.as.int_val : lhs.as.double_val;
+                 double d2 = (rhs.type == VAL_INT) ? rhs.as.int_val : rhs.as.double_val;
+                 res = (d1 == d2);
+             }
+             if (op == NOT_EQUAL) res = !res;
+             lhs = make_bool(res);
+        }
+    }
     exit_node(parser, "Equality");
+    return lhs;
 }
 
-static void logical_and(Parser* parser) {
+static Value logical_and(Parser* parser) {
     enter_node(parser, "LogicalAnd");
-    equality(parser);
-    while (match(parser, AND_AND)) equality(parser);
+    Value lhs = equality(parser);
+    while (match(parser, AND_AND)) {
+        Value rhs = equality(parser);
+        if (parser->executing) {
+            bool b1 = (lhs.type == VAL_BOOL) ? lhs.as.bool_val : (lhs.as.int_val != 0);
+            bool b2 = (rhs.type == VAL_BOOL) ? rhs.as.bool_val : (rhs.as.int_val != 0);
+            lhs = make_bool(b1 && b2);
+        }
+    }
     exit_node(parser, "LogicalAnd");
+    return lhs;
 }
 
-static void logical_or(Parser* parser) {
+static Value logical_or(Parser* parser) {
     enter_node(parser, "LogicalOr");
-    logical_and(parser);
-    while (match(parser, OR_OR)) logical_and(parser);
+    Value lhs = logical_and(parser);
+    while (match(parser, OR_OR)) {
+        Value rhs = logical_and(parser);
+        if (parser->executing) {
+            bool b1 = (lhs.type == VAL_BOOL) ? lhs.as.bool_val : (lhs.as.int_val != 0);
+            bool b2 = (rhs.type == VAL_BOOL) ? rhs.as.bool_val : (rhs.as.int_val != 0);
+            lhs = make_bool(b1 || b2);
+        }
+    }
     exit_node(parser, "LogicalOr");
+    return lhs;
 }
 
-static void expression(Parser* parser) {
+static Value expression(Parser* parser) {
     enter_node(parser, "Expression");
-    logical_or(parser);
+    Value v = logical_or(parser);
     exit_node(parser, "Expression");
+    return v;
 }
 
 static void declaration_statement(Parser* parser) {
     enter_node(parser, "DeclarationStatement");
-    // After var/const/dyn, there might be an optional type
-    // Accept TYPE tokens (bool, char, double, int, void)
     if (match(parser, TYPE)) {}
-    // Special case: accept 'str' as type (classified as KEYWORD per proposal)
     else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "str") == 0) {
         advance(parser);
     }
     consume(parser, IDENTIFIER, "Expect variable name.");
-    if (match(parser, EQUAL)) expression(parser);
+    char name[64];
+    strncpy(name, parser->previous_token.lexeme, 63);
+    
+    Value init = make_int(0);
+    if (match(parser, EQUAL)) init = expression(parser);
     consume(parser, SEMICOLON, "Expect ';' after variable declaration.");
+    
+    if (parser->executing) env_define(&parser->env, name, init, false);
     exit_node(parser, "DeclarationStatement");
 }
 
 static void assignment_statement(Parser* parser) {
     enter_node(parser, "AssignmentStatement");
-    // Check for compound assignment operators first
-    if (match(parser, EQUAL)) {}
-    else if (match(parser, PLUS_EQUAL)) {}
-    else if (match(parser, MINUS_EQUAL)) {}
-    else if (match(parser, STAR_EQUAL)) {}
-    else if (match(parser, SLASH_EQUAL)) {}
-    else if (match(parser, PERCENT_EQUAL)) {}
-    else {
-        error(parser, "Expect assignment operator (=, +=, -=, *=, /=, %=).");
-    }
-    expression(parser);
+    char name[64];
+    strncpy(name, parser->previous_token.lexeme, 63);
+
+    TokenType op = parser->current_token.type;
+    advance(parser); // consume =, +=, etc.
+    
+    Value rhs = expression(parser);
     consume(parser, SEMICOLON, "Expect ';' after assignment.");
+    
+    if (parser->executing) {
+        if (op == EQUAL) {
+             env_assign(parser->env, name, rhs);
+        } else {
+             Value lhs;
+             if (env_get(parser->env, name, &lhs)) {
+                 if (op == PLUS_EQUAL) lhs = val_add(lhs, rhs);
+                 if (op == MINUS_EQUAL) lhs = val_sub(lhs, rhs);
+                 if (op == STAR_EQUAL) lhs = val_mul(lhs, rhs);
+                 if (op == SLASH_EQUAL) lhs = val_div(lhs, rhs);
+                 env_assign(parser->env, name, lhs);
+             }
+        }
+    }
     exit_node(parser, "AssignmentStatement");
 }
 
@@ -933,69 +1411,164 @@ static void input_statement(Parser* parser) {
     enter_node(parser, "InputStatement");
     consume(parser, LEFT_PAREN, "Expect '(' after 'input'.");
     consume(parser, IDENTIFIER, "Expect variable name in input.");
+    char name[64];
+    strncpy(name, parser->previous_token.lexeme, 63);
     consume(parser, RIGHT_PAREN, "Expect ')' after input variable.");
     consume(parser, SEMICOLON, "Expect ';' after input statement.");
+    
+    if (parser->executing) {
+        int val;
+        printf("Enter value for %s: ", name);
+        if(scanf("%d", &val)) {
+            env_assign(parser->env, name, make_int(val));
+        }
+    }
     exit_node(parser, "InputStatement");
 }
 
 static void output_statement(Parser* parser) {
     enter_node(parser, "OutputStatement");
     consume(parser, LEFT_PAREN, "Expect '(' after 'print'.");
-    expression(parser);
+    Value v = expression(parser);
     consume(parser, RIGHT_PAREN, "Expect ')' after print expression.");
     consume(parser, SEMICOLON, "Expect ';' after print statement.");
+    
+    if (parser->executing) {
+        if (v.type == VAL_INT) printf("%d\n", v.as.int_val);
+        else if (v.type == VAL_DOUBLE) printf("%f\n", v.as.double_val);
+        else if (v.type == VAL_STRING) printf("%s\n", v.as.string_val);
+        else if (v.type == VAL_BOOL) printf("%s\n", v.as.bool_val ? "true" : "false");
+        else if (v.type == VAL_CHAR) printf("%c\n", v.as.char_val);
+        else printf("null\n");
+    }
     exit_node(parser, "OutputStatement");
+}
+
+static void jump_to(Parser* parser, int token_index) {
+    parser->current_index = token_index;
+    if (parser->current_index < parser->token_list->count)
+        parser->next_token = parser->token_list->tokens[parser->current_index++];
+    else
+        parser->next_token = create_token(TOKEN_EOF, "", "", 0, 0);
+    advance(parser);
 }
 
 static void while_statement(Parser* parser) {
     enter_node(parser, "WhileStatement");
+    int loop_start = parser->current_index - 2; 
+    
     if (check(parser, NOISE_WORD) && strcmp(parser->current_token.lexeme, "its") == 0) advance(parser);
     consume(parser, LEFT_PAREN, "Expect '(' after 'while'.");
-    expression(parser);
+    Value cond = expression(parser);
     consume(parser, RIGHT_PAREN, "Expect ')' after condition.");
-    statement(parser);
+    
+    if (parser->executing) {
+        bool b = (cond.type == VAL_BOOL) ? cond.as.bool_val : (cond.as.int_val != 0);
+        while (b) {
+            statement(parser);
+            jump_to(parser, loop_start);
+            parser->trace_parse = false;
+            
+            // Re-eval condition
+            if (check(parser, NOISE_WORD)) advance(parser);
+            consume(parser, LEFT_PAREN, "msg");
+            cond = expression(parser);
+            consume(parser, RIGHT_PAREN, "msg");
+            b = (cond.type == VAL_BOOL) ? cond.as.bool_val : (cond.as.int_val != 0);
+        }
+        parser->executing = false;
+        statement(parser);
+        parser->executing = true;
+    } else {
+        statement(parser);
+    }
+    
+    parser->trace_parse = true;
     exit_node(parser, "WhileStatement");
 }
 
 static void for_statement(Parser* parser) {
     enter_node(parser, "ForStatement");
     consume(parser, LEFT_PAREN, "Expect '(' after 'for'.");
+    
     if (match(parser, SEMICOLON)) {}
     else if (match(parser, TYPE)) declaration_statement(parser);
     else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "str") == 0) {
         advance(parser);
         declaration_statement(parser);
     }
-    else if (match(parser, IDENTIFIER)) assignment_statement(parser);
+    else if (match(parser, IDENTIFIER)) {
+         assignment_statement(parser); 
+    }
     else error(parser, "Expect variable declaration or assignment in for loop.");
     
-    if (!check(parser, SEMICOLON)) expression(parser);
-    consume(parser, SEMICOLON, "Expect ';' after loop condition.");
+    int cond_loc = parser->current_index - 2;
+    /* Debug */
+    /* printf("DEBUG: Cond loc: %d. Lexeme: %s\n", cond_loc, parser->token_list->tokens[cond_loc].lexeme); */ 
+
+    bool first_pass = true;
     
-    if (!check(parser, RIGHT_PAREN)) expression(parser);
-    consume(parser, RIGHT_PAREN, "Expect ')' after for clauses.");
-    
-    statement(parser);
+    while(1) { 
+        if (!first_pass) {
+             /* printf("Jumping to cond %d\n", cond_loc); */
+             jump_to(parser, cond_loc);
+             parser->trace_parse = false;
+        }
+        
+        Value cond = make_bool(true);
+        if (!check(parser, SEMICOLON)) cond = expression(parser);
+        consume(parser, SEMICOLON, "Expect ';' after loop condition.");
+        
+        bool b = (cond.type == VAL_BOOL) ? cond.as.bool_val : (cond.as.int_val != 0);
+        if (!parser->executing) b = false; 
+        
+        int inc_loc = parser->current_index - 2;
+        
+        bool old_exec = parser->executing;
+        parser->executing = false;
+        if (!check(parser, RIGHT_PAREN)) {
+             expression(parser);
+        }
+        consume(parser, RIGHT_PAREN, "Expect ')' after for clauses.");
+        parser->executing = old_exec;
+        
+        if (b) {
+            statement(parser); 
+            parser->trace_parse = false;
+            jump_to(parser, inc_loc);
+            parser->executing = true;
+            if (!check(parser, RIGHT_PAREN)) { 
+                expression(parser); 
+            }
+            first_pass = false;
+        } else {
+             if (parser->executing) { 
+                 parser->executing = false;
+                 statement(parser);
+                 parser->executing = true;
+             } else {
+                 statement(parser); 
+             }
+             break;
+        }
+    }
+    parser->trace_parse = true;
     exit_node(parser, "ForStatement");
 }
 
 static void foreach_statement(Parser* parser) {
     enter_node(parser, "ForeachStatement");
     consume(parser, LEFT_PAREN, "Expect '(' after 'foreach'.");
-    
     if (match(parser, TYPE)) {}
     else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "str") == 0) advance(parser);
     else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "var") == 0) advance(parser);
     else error(parser, "Expect type or 'var' in foreach.");
-    
     consume(parser, IDENTIFIER, "Expect variable name.");
-    
     if (check(parser, RESERVED_WORD) && strcmp(parser->current_token.lexeme, "in") == 0) {
         advance(parser);
     } else {
         error(parser, "Expect 'in' after variable.");
     }
-    
     expression(parser);
     consume(parser, RIGHT_PAREN, "Expect ')' after collection.");
     statement(parser);
@@ -1008,7 +1581,6 @@ static void switch_statement(Parser* parser) {
     expression(parser);
     consume(parser, RIGHT_PAREN, "Expect ')' after switch expression.");
     consume(parser, LEFT_BRACE, "Expect '{' before switch cases.");
-    
     while (!check(parser, RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
         if (match(parser, CASE)) {
             enter_node(parser, "CaseClause");
@@ -1036,19 +1608,51 @@ static void switch_statement(Parser* parser) {
 
 static void do_while_statement(Parser* parser) {
     enter_node(parser, "DoWhileStatement");
+    int loop_start = parser->current_index - 2;
     consume(parser, LEFT_BRACE, "Expect '{' after 'do'.");
-    block(parser);
+    // block expects { to be consumed? No, block() logic: while(!}) stmt; consume }.
+    // My grammar says do {...} while();
+    // block() function: while(!curr.}) statement; consume RBRACE.
+    // so we don't consume LBRACE in block().
+    // We already consumed LBRACE.
     
-    if (check(parser, RESERVED_WORD) && strcmp(parser->current_token.lexeme, "while") == 0) {
-        advance(parser);
-    } else {
-        error(parser, "Expect 'while' after do-block.");
+    // We need to handle do-while execution. 
+    // It always executes once.
+    // Then check condition.
+    
+    bool first = true;
+    while(1) {
+        if (!first) {
+            jump_to(parser, loop_start);
+            consume(parser, LEFT_BRACE, "msg"); // Re-consume
+            parser->trace_parse = false;
+        }
+        
+        // Execute block
+        while (!check(parser, RIGHT_BRACE) && !check(parser, TOKEN_EOF)) statement(parser);
+        consume(parser, RIGHT_BRACE, "Expect '}' after block.");
+        
+        if (check(parser, RESERVED_WORD) && strcmp(parser->current_token.lexeme, "while") == 0) {
+            advance(parser);
+        } else {
+            error(parser, "Expect 'while' after do-block.");
+        }
+        
+        consume(parser, LEFT_PAREN, "Expect '(' after 'while'.");
+        Value cond = expression(parser);
+        consume(parser, RIGHT_PAREN, "Expect ')' after condition.");
+        consume(parser, SEMICOLON, "Expect ';' after do-while.");
+        
+        if (parser->executing) {
+            bool b = (cond.type == VAL_BOOL) ? cond.as.bool_val : (cond.as.int_val != 0);
+            if (!b) break;
+        } else {
+            break;
+        }
+        first = false;
     }
     
-    consume(parser, LEFT_PAREN, "Expect '(' after 'while'.");
-    expression(parser);
-    consume(parser, RIGHT_PAREN, "Expect ')' after condition.");
-    consume(parser, SEMICOLON, "Expect ';' after do-while.");
+    parser->trace_parse = true;
     exit_node(parser, "DoWhileStatement");
 }
 
@@ -1156,11 +1760,6 @@ static void class_declaration(Parser* parser) {
                 if (match(parser, GET) || match(parser, SET) || match(parser, INIT)) {
                     // Accessor body: { ... } or ;
                     if (match(parser, LEFT_BRACE)) {
-                        // { return expr; } or { expr; }
-                        // For simplicity, just parse as block or statement
-                        // The doc says: "get" "{" "return" <Expression> ";" "}"
-                        // or "set" "{" <Expression> ";" "}"
-                        // Let's just use block() or statement() loop until }
                         while (!check(parser, RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
                             statement(parser);
                         }
@@ -1189,20 +1788,29 @@ static void class_declaration(Parser* parser) {
 
 static void statement(Parser* parser) {
     enter_node(parser, "Statement");
-    // Handle prefix increment/decrement statements
     if (match(parser, PLUS_PLUS) || match(parser, MINUS_MINUS)) {
         enter_node(parser, "IncrementStatement");
+        TokenType op = parser->previous_token.type;
         consume(parser, IDENTIFIER, "Expect identifier after prefix operator.");
+        char name[64];
+        strncpy(name, parser->previous_token.lexeme, 63);
+        
+        if (parser->executing) {
+            Value v;
+            if (env_get(parser->env, name, &v)) {
+                if(op == PLUS_PLUS) v = val_add(v, make_int(1));
+                else v = val_sub(v, make_int(1));
+                env_assign(parser->env, name, v);
+            }
+        }
         consume(parser, SEMICOLON, "Expect ';' after increment/decrement.");
         exit_node(parser, "IncrementStatement");
     }
-    // Handle type declarations (TYPE tokens or 'str' KEYWORD)
     else if (match(parser, TYPE)) declaration_statement(parser);
     else if (check(parser, KEYWORD) && strcmp(parser->current_token.lexeme, "str") == 0) {
         advance(parser);
         declaration_statement(parser);
     }
-    // New Control Flow & Declarations
     else if (match(parser, SWITCH)) switch_statement(parser);
     else if (match(parser, DO)) do_while_statement(parser);
     else if (match(parser, NEXT)) next_statement(parser);
@@ -1212,11 +1820,10 @@ static void statement(Parser* parser) {
     else if (match(parser, ENUM)) enum_declaration(parser);
     else if (match(parser, RECORD)) record_declaration(parser);
     else if ((check(parser, PUB) || check(parser, PRIV)) && parser->next_token.type == RECORD) {
-        advance(parser); // consume modifier
-        advance(parser); // consume RECORD
+        advance(parser); 
+        advance(parser); 
         record_declaration(parser);
     }
-    
     else if (check(parser, RESERVED_WORD) || check(parser, KEYWORD)) {
         if (strcmp(parser->current_token.lexeme, "while") == 0) { advance(parser); while_statement(parser); }
         else if (strcmp(parser->current_token.lexeme, "for") == 0) { advance(parser); for_statement(parser); }
@@ -1226,13 +1833,22 @@ static void statement(Parser* parser) {
             advance(parser);
             if (check(parser, NOISE_WORD) && strcmp(parser->current_token.lexeme, "at") == 0) advance(parser);
             consume(parser, LEFT_PAREN, "Expect '(' after 'if'.");
-            expression(parser);
+            Value cond = expression(parser);
             consume(parser, RIGHT_PAREN, "Expect ')' after condition.");
             if (check(parser, NOISE_WORD) && strcmp(parser->current_token.lexeme, "then") == 0) advance(parser);
+            
+            bool parent_exec = parser->executing;
+            bool b = (cond.type == VAL_BOOL) ? cond.as.bool_val : (cond.as.int_val != 0);
+            
+            parser->executing = parent_exec && b;
             statement(parser);
+            parser->executing = parent_exec; 
+            
             if (check(parser, RESERVED_WORD) && strcmp(parser->current_token.lexeme, "else") == 0) {
                 advance(parser);
+                parser->executing = parent_exec && !b;
                 statement(parser);
+                parser->executing = parent_exec;
             }
             exit_node(parser, "IfStatement");
         } else if (strcmp(parser->current_token.lexeme, "return") == 0) {
@@ -1251,17 +1867,23 @@ static void statement(Parser* parser) {
             enter_node(parser, "LetStatement");
             advance(parser);
             consume(parser, IDENTIFIER, "Expect variable name after 'let'.");
+            char name[64];
+            strncpy(name, parser->previous_token.lexeme, 63);
             consume(parser, EQUAL, "Expect '=' after variable name.");
-            expression(parser);
+            Value init = expression(parser);
             consume(parser, SEMICOLON, "Expect ';' after let statement.");
+            if (parser->executing) env_define(&parser->env, name, init, false);
             exit_node(parser, "LetStatement");
         } else if (strcmp(parser->current_token.lexeme, "set") == 0) {
             enter_node(parser, "SetStatement");
             advance(parser);
             consume(parser, IDENTIFIER, "Expect variable name after 'set'.");
+            char name[64];
+            strncpy(name, parser->previous_token.lexeme, 63);
             consume(parser, EQUAL, "Expect '=' after variable name.");
-            expression(parser);
+            Value rhs = expression(parser);
             consume(parser, SEMICOLON, "Expect ';' after set statement.");
+            if (parser->executing) env_assign(parser->env, name, rhs);
             exit_node(parser, "SetStatement");
         } else if (strcmp(parser->current_token.lexeme, "var") == 0 || 
                    strcmp(parser->current_token.lexeme, "const") == 0 ||
@@ -1269,18 +1891,14 @@ static void statement(Parser* parser) {
             advance(parser);
             declaration_statement(parser);
         } else {
-            // If we hit a keyword that isn't a statement starter, it's likely an error or used as an identifier
-            // But if it was used as an identifier, it should have been caught by the IDENTIFIER check?
-            // No, KEYWORD tokens are separate.
-            // If we are here, we have a KEYWORD/RESERVED_WORD that is NOT one of the above.
-            // e.g. 'class' is handled above.
-            // If it's something like 'and', 'or', etc. appearing as a statement start, it's invalid.
             error(parser, "Unexpected keyword at start of statement.");
             advance(parser);
         }
     } else if (match(parser, LEFT_BRACE)) {
         block(parser);
     } else if (match(parser, IDENTIFIER)) {
+        char name[64];
+        strncpy(name, parser->previous_token.lexeme, 63);
         if (check(parser, EQUAL) || check(parser, PLUS_EQUAL) || check(parser, MINUS_EQUAL) ||
             check(parser, STAR_EQUAL) || check(parser, SLASH_EQUAL) || check(parser, PERCENT_EQUAL)) {
             assignment_statement(parser);
@@ -1294,7 +1912,15 @@ static void statement(Parser* parser) {
             exit_node(parser, "FunctionCall");
         } else if (check(parser, PLUS_PLUS) || check(parser, MINUS_MINUS)) {
             enter_node(parser, "IncrementStatement");
+            TokenType op = parser->current_token.type;
             advance(parser);
+            if (parser->executing) {
+                Value v;
+                if(env_get(parser->env, name, &v)) {
+                     Value new_val = (op == PLUS_PLUS) ? val_add(v, make_int(1)) : val_sub(v, make_int(1));
+                     env_assign(parser->env, name, new_val);
+                }
+            }
             consume(parser, SEMICOLON, "Expect ';' after increment/decrement.");
             exit_node(parser, "IncrementStatement");
         } else {
@@ -1391,6 +2017,16 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    const char* suffix = ".cytho";
+    size_t input_len = strlen(argv[1]);
+    size_t suffix_len = strlen(suffix);
+    
+    // 1. File Extension Check
+    if (input_len < suffix_len || strcmp(argv[1] + input_len - suffix_len, suffix) != 0) {
+        fprintf(stderr, "Error: Invalid file type. Expected '.cytho' extension.\n");
+        return 1;
+    }
+
     // Read source file
     FILE* file = fopen(argv[1], "r");
     if (!file) {
@@ -1405,61 +2041,55 @@ int main(int argc, char** argv) {
     source[bytes_read] = '\0';
     fclose(file);
 
-    // 1. Generate Symbol Table
+    // 2. Lexical Analysis -> Generate Symbol Table File
     char symbol_table_path[256];
-    const char* suffix = ".cytho";
-    size_t input_len = strlen(argv[1]);
-    size_t suffix_len = strlen(suffix);
-    
-    if (input_len > suffix_len && strcmp(argv[1] + input_len - suffix_len, suffix) == 0) {
-        strncpy(symbol_table_path, argv[1], input_len);
-        symbol_table_path[input_len] = '\0';
-        strcat(symbol_table_path, ".symboltable.txt");
-    } else {
-        snprintf(symbol_table_path, sizeof(symbol_table_path), "%s.symboltable.txt", argv[1]);
-    }
+    strncpy(symbol_table_path, argv[1], input_len);
+    symbol_table_path[input_len] = '\0';
+    strcat(symbol_table_path, ".symboltable.txt");
     
     Lexer* lexer_for_table = lexer_create(source);
     write_symbol_table(lexer_for_table, symbol_table_path);
-    printf("Symbol table written to: %s\n", symbol_table_path);
+    printf("Lexical Analysis Complete. Symbol table written to: %s\n", symbol_table_path);
     
-    // Cleanup first lexer (but keep source!)
+    // Check if symbol table valid
+    // ...
+
+    // Cleanup Lexer
     free(lexer_for_table->trie);
     free(lexer_for_table);
+    free(source); // Source no longer needed after Lexing phase
 
-    // 2. Generate Parse Tree
-    char parse_tree_path[256];
-    if (input_len > suffix_len && strcmp(argv[1] + input_len - suffix_len, suffix) == 0) {
-        strncpy(parse_tree_path, argv[1], input_len);
-        parse_tree_path[input_len] = '\0';
-        strcat(parse_tree_path, ".parsetree.txt");
-    } else {
-        snprintf(parse_tree_path, sizeof(parse_tree_path), "%s.parsetree.txt", argv[1]);
+    // 3. Syntax Analysis -> Read Token Stream from Symbol Table
+    // Requirement: "Input: must be read one by one from the symbol table"
+    TokenList tokens = read_tokens_from_symbol_table(symbol_table_path);
+    if (tokens.count == 0 && tokens.tokens == NULL) {
+        fprintf(stderr, "Error: Failed to read tokens from symbol table or empty file.\n");
+        return 1;
     }
+    printf("Read %d tokens from symbol table.\n", tokens.count);
+
+    // 4. Generate Parse Tree
+    char parse_tree_path[256];
+    strncpy(parse_tree_path, argv[1], input_len);
+    parse_tree_path[input_len] = '\0';
+    strcat(parse_tree_path, ".parsetree.txt");
     
     FILE* output_file = fopen(parse_tree_path, "w");
     if (!output_file) fprintf(stderr, "Error: Cannot create output file '%s'\n", parse_tree_path);
     else printf("Writing parse tree to: %s\n", parse_tree_path);
 
-    // Run Parser with fresh lexer
-    Lexer* lexer = lexer_create(source);
-    Parser* parser = parser_create(lexer);
+    // Run Parser with Token List
+    Parser* parser = parser_create(&tokens);
     parser->output_file = output_file;
     
     parser_parse(parser);
 
     // Cleanup
     if (output_file) fclose(output_file);
-    if (parser->current_token.lexeme) free(parser->current_token.lexeme);
-    if (parser->current_token.raw) free(parser->current_token.raw);
-    if (parser->next_token.lexeme) free(parser->next_token.lexeme);
-    if (parser->next_token.raw) free(parser->next_token.raw);
-    if (parser->previous_token.lexeme) free(parser->previous_token.lexeme);
-    if (parser->previous_token.raw) free(parser->previous_token.raw);
+    // Be careful with freeing tokens, strings might be duplicated
+    // for (int i=0; i<tokens.count; i++) { free(tokens.tokens[i].lexeme); free(tokens.tokens[i].raw); }
+    // free(tokens.tokens);
     free(parser);
-    free(lexer->trie);
-    free(lexer);
-    free(source);
 
     return 0;
 }

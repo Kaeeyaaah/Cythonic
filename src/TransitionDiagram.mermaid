@@ -1,20 +1,82 @@
 stateDiagram-v2
     [*] --> Program
-    Program --> Statement : EOF not reached
-    Statement --> Declaration : TYPE
-    Statement --> Assignment : IDENTIFIER
-    Statement --> Input : input
-    Statement --> Output : print
-    Statement --> While : while
-    Statement --> For : for
-    Statement --> If : if
-    Statement --> Block : {
-    
-    Declaration --> [*] : ;
-    Assignment --> [*] : ;
-    Input --> [*] : ;
-    Output --> [*] : ;
-    While --> Statement : body
-    For --> Statement : body
-    If --> Statement : then_branch
-    Block --> Statement : } not reached
+    Program --> Statement : "Loop until EOF"
+    Program --> [*] : "EOF"
+
+    state Statement {
+        [*] --> CheckToken
+        
+        %% Declarations
+        CheckToken --> Declaration : "TYPE or str or var or const or dyn"
+        
+        %% Assignments & Expressions
+        CheckToken --> Assignment : "IDENTIFIER (=, +=)"
+        CheckToken --> Increment : "IDENTIFIER (++, --)"
+        CheckToken --> FunctionCall : "IDENTIFIER '('"
+        CheckToken --> Let : "'let'"
+        CheckToken --> Set : "'set'"
+        
+        %% Control Flow
+        CheckToken --> If : "'if'"
+        CheckToken --> While : "'while'"
+        CheckToken --> DoWhile : "'do'"
+        CheckToken --> For : "'for'"
+        CheckToken --> Foreach : "'foreach'"
+        CheckToken --> Switch : "'switch'"
+        CheckToken --> Return : "'return'"
+        CheckToken --> Break : "'break'"
+        CheckToken --> Next : "'next'"
+        
+        %% I/O
+        CheckToken --> Input : "'input'"
+        CheckToken --> Output : "'print'"
+        
+        %% OOP & Structures
+        CheckToken --> ClassDecl : "'class'"
+        CheckToken --> Struct : "'struct'"
+        CheckToken --> Enum : "'enum'"
+        CheckToken --> Record : "'record' or 'pub' or 'priv'"
+        
+        %% Scoping
+        CheckToken --> Block : "'{'"
+
+        %% Terminals
+        Declaration --> [*]
+        Assignment --> [*]
+        Increment --> [*]
+        FunctionCall --> [*]
+        Let --> [*]
+        Set --> [*]
+        Input --> [*]
+        Output --> [*]
+        Return --> [*]
+        Break --> [*]
+        Next --> [*]
+        Struct --> [*]
+        Enum --> [*]
+        Record --> [*]
+
+        %% Recursive / Complex
+        If --> [*] : "then/else"
+        While --> [*] : "body"
+        DoWhile --> [*] : "body"
+        For --> [*] : "body"
+        Foreach --> [*] : "body"
+        
+        Switch --> Case : "'case'"
+        Switch --> Default : "'default'"
+        Case --> CheckToken : "body"
+        Default --> CheckToken : "body"
+        
+        ClassDecl --> ClassMember : "{"
+        ClassMember --> Method : "Method"
+        ClassMember --> Property : "Property"
+        ClassMember --> Field : "Field"
+        Method --> ClassMember
+        Property --> ClassMember
+        Field --> ClassMember
+        ClassMember --> [*] : "}"
+        
+        Block --> CheckToken : "statement"
+        Block --> [*] : "}"
+    }
