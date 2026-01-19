@@ -81,10 +81,15 @@ if (z > MAX) {
 // ============================================================================
 
 // Iteration 1: Simple iteration (WHILE loop)
-count = 0;
-while (count < 5) {
-    print(count);
-    count++;
+i = 0;
+while (i < 2) {
+    j = 0;
+    print("Outer");
+    while (j < 2) {
+        print("Inner");
+        j++;
+    }
+    i++;
 }
 
 // Iteration 2: Nested iteration (FOR loop with nested WHILE)
@@ -96,6 +101,17 @@ for (i = 0; i < 3; i++) {
         j++;
     }
 }
+
+i = 0;
+do {
+    j = 0;
+    print("Outer DO");
+    do {
+        print("Inner DO");
+        j++;
+    } while (j < 2);
+    i++;
+} while (i < 2);
 
 // ============================================================================
 // ADDITIONAL FEATURES DEMONSTRATION
