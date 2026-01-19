@@ -77,7 +77,7 @@ if (z > MAX) {
 }
 
 // ============================================================================
-// ITERATIVE STATEMENTS (2 Required)
+// ITERATIVE STATEMENTS (3 Required)
 // ============================================================================
 
 // Iteration 1: Simple iteration (WHILE loop)
@@ -102,6 +102,7 @@ for (i = 0; i < 3; i++) {
     }
 }
 
+// Iteration 3: Nested iteration (DO loop with nested DO)
 i = 0;
 do {
     j = 0;
