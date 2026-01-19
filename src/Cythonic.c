@@ -889,11 +889,7 @@ static void env_define(Env** env, const char* name, Value value, bool is_const) 
     // New
     Env* node = malloc(sizeof(Env));
     node->name = strdup(name);
-    node->value = value; // Takes ownership (shallow copy of struct, string ptr copied)
-    // Note: for strings, we need to handle ownership carefully. 
-    // Here we assume value's string dict is owned by Env. 
-    // When passing Value around, we might need deep copies for strings.
-    // For simplicity: `make_string` allocs. `env_define` takes it.
+    node->value = value;
     node->is_const = is_const;
     node->next = *env;
     *env = node;
@@ -1610,15 +1606,6 @@ static void do_while_statement(Parser* parser) {
     enter_node(parser, "DoWhileStatement");
     int loop_start = parser->current_index - 2;
     consume(parser, LEFT_BRACE, "Expect '{' after 'do'.");
-    // block expects { to be consumed? No, block() logic: while(!}) stmt; consume }.
-    // My grammar says do {...} while();
-    // block() function: while(!curr.}) statement; consume RBRACE.
-    // so we don't consume LBRACE in block().
-    // We already consumed LBRACE.
-    
-    // We need to handle do-while execution. 
-    // It always executes once.
-    // Then check condition.
     
     bool first = true;
     while(1) {
@@ -2086,9 +2073,6 @@ int main(int argc, char** argv) {
 
     // Cleanup
     if (output_file) fclose(output_file);
-    // Be careful with freeing tokens, strings might be duplicated
-    // for (int i=0; i<tokens.count; i++) { free(tokens.tokens[i].lexeme); free(tokens.tokens[i].raw); }
-    // free(tokens.tokens);
     free(parser);
 
     return 0;
