@@ -38,7 +38,7 @@ This compiler demonstrates all core concepts of compiler construction:
 
 ### Build the Compiler
 ```bash
-gcc ./src/Cythonic.c -o cythonic.exe    # Windows
+cd src gcc Cythonic.c -o cythonic.exe    # Windows
 # OR
 gcc ./src/Cythonic.c -o cythonic       # Linux/Mac
 ```

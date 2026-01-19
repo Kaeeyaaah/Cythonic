@@ -988,9 +988,10 @@ static void print_indent(Parser* parser) {
 }
 
 static void enter_node(Parser* parser, const char* name) {
-    if (!parser->output_file || !parser->trace_parse) return;
-    print_indent(parser);
-    fprintf(parser->output_file, "Enter <%s>\n", name);
+    if (parser->output_file && parser->trace_parse) {
+        print_indent(parser);
+        fprintf(parser->output_file, "Enter <%s>\n", name);
+    }
     parser->indent_level++;
 }
 
